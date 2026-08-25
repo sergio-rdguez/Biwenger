@@ -17,22 +17,17 @@ description: >-
 
 ## Pestañas actuales
 
-`resumen` · `clasificacion` · `jornada` · `mercado` · `movimientos` · `bote` · `historico` · `managers` · `reglas`
+`resumen` · `clasificacion` · `jornada` · `mercado` · `plantillas` · `movimientos` · `bote` · `historico` · `managers` · `reglas`
 
-- **jornada**: ranking + fixtures + once con puntos por jugador (jornada actual)
-- **mercado**: ventas abiertas + valor de plantillas, **filtros por columna** (checkboxes + buscar)
-- **movimientos**: clausulazos, fichajes, cláusulas + filtros (sección, tipo, manager, equipo, jugador)
+- **jornada**: ranking colapsado; al expandir, alineación de esa jornada (`lineups_by_round`)
+- **mercado**: solo ventas abiertas (+ filtros por columna)
+- **plantillas**: valor / pts/M€ de managers (separado del mercado)
+- **movimientos**: clausulazos, fichajes, cláusulas + filtros
 - **managers**: ficha + preview de plantilla/cláusulas
-
-Al añadir pestaña: botón `.nav-item`, `<section class="tab" id="tab-…">`, entrada en `TITLES`, render en `applyData`.
 
 ## Datos extra en `liga.json`
 
-`market` · `activity` · `fixtures` · `players_index` · `players[].lineup` · `players[].roster` · `postponed_rounds`
-
-## Siguiente evolutivo (pendiente)
-
-Consultar el **once alineado por manager en cada jornada** (histórico), no solo la jornada activa. Requiere guardar `lineups` por `round` desde `user/{id}` o el tablón al cerrar cada jornada.
+`market` · `activity` · `fixtures` · `players_index` · `players[].lineup` · `players[].lineups_by_round` · `players[].roster` · `postponed_rounds`
 
 ## Datos / cálculo
 

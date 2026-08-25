@@ -583,6 +583,7 @@ def sync(dry_run: bool = False) -> dict:
         accept_all_new=accept_all_new,
         catalog=catalog_players,
         teams=competition.get("teams") or {},
+        current_jornada=current_jornada,
     )
 
     # Reordenar tras enriquecer

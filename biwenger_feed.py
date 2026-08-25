@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 import time
 from typing import Any
 
@@ -13,7 +14,8 @@ CATALOG_URL = (
 MARKET_URL = "https://biwenger.as.com/api/v2/market"
 USER_URL = (
     "https://biwenger.as.com/api/v2/user/{user_id}"
-    "?fields=name,balance,points,players(id,owner),lineups(round,points,count,position)"
+    "?fields=name,balance,points,players(id,owner),"
+    "lineups(round,points,count,position,type,date,players)"
 )
 
 POS_LABEL = {1: "PT", 2: "DF", 3: "MC", 4: "DL"}
@@ -98,7 +100,21 @@ def fetch_catalog(session: requests.Session) -> tuple[dict[str, dict], dict[str,
     return players, teams
 
 
-def slim_player(pid: int | str, catalog: dict[str, dict], teams: dict[str, dict]) -> dict:
+def slim_player(pid: int | str | None, catalog: dict[str, dict], teams: dict[str, dict]) -> dict:
+    if pid is None:
+        return {
+            "id": None,
+            "name": "?",
+            "position": None,
+            "position_label": "?",
+            "price": None,
+            "points": None,
+            "points_last": None,
+            "fitness": [],
+            "status": None,
+            "team": None,
+            "team_id": None,
+        }
     raw = catalog.get(str(pid)) or {}
     team_id = raw.get("teamID") or raw.get("teamId") or raw.get("team")
     if isinstance(team_id, dict):
@@ -291,22 +307,57 @@ def fetch_user_detail(session: requests.Session, user_id: int) -> dict:
     return res.json().get("data") or {}
 
 
+def fitness_at_jornada(fitness: Any, jornada: int) -> int | None:
+    """Puntos del jugador en una jornada (fitness[0] = J1)."""
+    if not isinstance(fitness, list) or jornada < 1:
+        return None
+    idx = jornada - 1
+    if idx < len(fitness) and isinstance(fitness[idx], (int, float)):
+        return int(fitness[idx])
+    return None
+
+
+def extract_round_number(round_obj: dict | None) -> int | None:
+    if not isinstance(round_obj, dict):
+        return None
+    name = round_obj.get("name") or round_obj.get("short") or ""
+    if isinstance(name, str):
+        m = re.search(r"(\d+)", name)
+        if m:
+            return int(m.group(1))
+    short = round_obj.get("shortName")
+    if isinstance(short, int):
+        return short
+    return None
+
+
 def build_lineup_detail(
     lineup: dict | None,
     catalog: dict[str, dict],
     teams: dict[str, dict],
+    jornada: int | None = None,
 ) -> dict | None:
     if not isinstance(lineup, dict):
         return None
     starters = []
     for pid in lineup.get("players") or []:
+        if pid is None:
+            continue
         info = slim_player(pid, catalog, teams)
-        info["points_jornada"] = info.get("points_last")
+        if jornada is not None:
+            info["points_jornada"] = fitness_at_jornada(info.get("fitness"), jornada)
+        else:
+            info["points_jornada"] = info.get("points_last")
         starters.append(info)
     bench = []
     for pid in lineup.get("discarded") or []:
+        if pid is None:
+            continue
         info = slim_player(pid, catalog, teams)
-        info["points_jornada"] = info.get("points_last")
+        if jornada is not None:
+            info["points_jornada"] = fitness_at_jornada(info.get("fitness"), jornada)
+        else:
+            info["points_jornada"] = info.get("points_last")
         bench.append(info)
     scored = sum(p["points_jornada"] or 0 for p in starters)
     return {
@@ -319,6 +370,108 @@ def build_lineup_detail(
     }
 
 
+def build_lineup_from_history(
+    entry: dict,
+    catalog: dict[str, dict],
+    teams: dict[str, dict],
+) -> dict | None:
+    rnd = entry.get("round") or {}
+    jornada = extract_round_number(rnd)
+    if jornada is None:
+        return None
+    starters = []
+    for row in entry.get("players") or []:
+        if isinstance(row, dict):
+            pid = row.get("id")
+            if pid is None:
+                continue
+            info = slim_player(pid, catalog, teams)
+            if row.get("name"):
+                info["name"] = row["name"]
+            team = row.get("team")
+            if isinstance(team, dict) and team.get("name"):
+                info["team"] = team["name"]
+            pos = row.get("position")
+            if pos is not None:
+                info["position"] = pos
+                info["position_label"] = POS_LABEL.get(pos, info.get("position_label"))
+            fit = row.get("fitness") if isinstance(row.get("fitness"), list) else info.get("fitness")
+            info["points_jornada"] = fitness_at_jornada(fit, jornada)
+            if info["points_jornada"] is None:
+                info["points_jornada"] = last_fitness_points(fit)
+        else:
+            info = slim_player(row, catalog, teams)
+            info["points_jornada"] = fitness_at_jornada(info.get("fitness"), jornada)
+        starters.append(info)
+    return {
+        "formation": entry.get("type"),
+        "counting": entry.get("count"),
+        "updated_at": entry.get("date"),
+        "round_id": rnd.get("id"),
+        "jornada": jornada,
+        "league_position": entry.get("position"),
+        "starters": starters,
+        "bench": [],
+        "points_sum": entry.get("points")
+        if entry.get("points") is not None
+        else sum(p.get("points_jornada") or 0 for p in starters),
+    }
+
+
+def slim_lineup_public(lineup: dict | None) -> dict | None:
+    """Drop heavy fields before writing liga.json."""
+    if not isinstance(lineup, dict):
+        return None
+    return {
+        "formation": lineup.get("formation"),
+        "counting": lineup.get("counting"),
+        "updated_at": lineup.get("updated_at"),
+        "round_id": lineup.get("round_id"),
+        "league_position": lineup.get("league_position"),
+        "points_sum": lineup.get("points_sum"),
+        "starters": [
+            {
+                "id": p.get("id"),
+                "name": p.get("name"),
+                "position_label": p.get("position_label"),
+                "team": p.get("team"),
+                "points_jornada": p.get("points_jornada"),
+                "price": p.get("price"),
+            }
+            for p in (lineup.get("starters") or [])
+        ],
+        "bench": [
+            {
+                "id": p.get("id"),
+                "name": p.get("name"),
+                "position_label": p.get("position_label"),
+                "team": p.get("team"),
+                "points_jornada": p.get("points_jornada"),
+                "price": p.get("price"),
+            }
+            for p in (lineup.get("bench") or [])
+        ],
+    }
+
+
+def build_lineups_by_round(
+    history: list,
+    catalog: dict[str, dict],
+    teams: dict[str, dict],
+) -> dict[str, dict]:
+    out: dict[str, dict] = {}
+    for entry in history or []:
+        if not isinstance(entry, dict):
+            continue
+        detail = build_lineup_from_history(entry, catalog, teams)
+        if not detail or detail.get("jornada") is None:
+            continue
+        public = slim_lineup_public(detail)
+        if public:
+            out[str(detail["jornada"])] = public
+    return out
+
+
 def build_roster(
     user_data: dict,
     catalog: dict[str, dict],
@@ -329,6 +482,8 @@ def build_roster(
     roster = []
     for row in user_data.get("players") or []:
         pid = row.get("id")
+        if pid is None:
+            continue
         owner = row.get("owner") or {}
         info = slim_player(pid, catalog, teams)
         info.update(
@@ -363,8 +518,9 @@ def enrich_league_feed(
     accept_all_new: bool,
     catalog: dict[str, dict] | None = None,
     teams: dict[str, dict] | None = None,
+    current_jornada: int | None = None,
 ) -> dict:
-    print("Descargando catálogo, mercado y plantillas…")
+    print("Descargando mercado y plantillas…")
     if catalog is None or teams is None:
         catalog, teams = fetch_catalog(session)
     market = fetch_market(session)
@@ -386,12 +542,43 @@ def enrich_league_feed(
         time.sleep(0.05)
         live = live_by_id.get(user_id) or {}
         lineup = live.get("lineup") if isinstance(live.get("lineup"), dict) else {}
-        starter_ids = {int(x) for x in (lineup.get("players") or [])}
-        bench_ids = {int(x) for x in (lineup.get("discarded") or [])}
-        lineup_detail = build_lineup_detail(lineup, catalog, teams)
+        starter_ids = {int(x) for x in (lineup.get("players") or []) if x is not None}
+        bench_ids = {int(x) for x in (lineup.get("discarded") or []) if x is not None}
+        history = detail.get("lineups") or []
+        lineups_by_round = build_lineups_by_round(history, catalog, teams)
+        live_detail = slim_lineup_public(
+            build_lineup_detail(lineup, catalog, teams, jornada=current_jornada)
+        )
+        if (
+            current_jornada
+            and live_detail
+            and live_detail.get("starters")
+            and str(current_jornada) not in lineups_by_round
+        ):
+            lineups_by_round[str(current_jornada)] = live_detail
         roster = build_roster(detail, catalog, teams, starter_ids, bench_ids)
+        # Slim roster for public JSON
+        roster_public = [
+            {
+                "id": p.get("id"),
+                "name": p.get("name"),
+                "position_label": p.get("position_label"),
+                "team": p.get("team"),
+                "points": p.get("points"),
+                "points_last": p.get("points_last"),
+                "price": p.get("price"),
+                "clause": p.get("clause"),
+                "in_xi": p.get("in_xi"),
+                "on_bench": p.get("on_bench"),
+            }
+            for p in roster
+        ]
         used_ids |= starter_ids | bench_ids
-        used_ids |= {int(p["id"]) for p in roster}
+        used_ids |= {int(p["id"]) for p in roster if p.get("id") is not None}
+        for lu in lineups_by_round.values():
+            for p in lu.get("starters") or []:
+                if p.get("id") is not None:
+                    used_ids.add(int(p["id"]))
 
         balance = detail.get("balance")
         team_value = int(row.get("teamValue") or 0)
@@ -402,17 +589,18 @@ def enrich_league_feed(
         managers_extra[web_name] = {
             "balance": balance,
             "max_bid": max_bid,
-            "lineup": lineup_detail,
-            "roster": roster,
-            "lineups_history": detail.get("lineups") or [],
+            "lineup": live_detail,
+            "roster": roster_public,
+            "lineups_by_round": lineups_by_round,
         }
 
         player = by_name.get(web_name)
         if player is not None:
             player["balance"] = balance
             player["max_bid"] = max_bid
-            player["lineup"] = lineup_detail
-            player["roster"] = roster
+            player["lineup"] = live_detail
+            player["roster"] = roster_public
+            player["lineups_by_round"] = lineups_by_round
 
     # Enrich market/activity with names
     for sale in market.get("sales") or []:

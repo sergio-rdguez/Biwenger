@@ -6,6 +6,7 @@ const TITLES = {
   clasificacion: "Clasificación",
   jornada: "Jornada en vivo",
   mercado: "Mercado",
+  plantillas: "Valor plantillas",
   movimientos: "Movimientos",
   bote: "Bote y adeudas",
   historico: "Histórico",
@@ -149,6 +150,7 @@ function enrich(data) {
     return {
       ...p,
       ...stats,
+      _currentJornada: data.current_jornada,
       adeudaPrev,
       adeudaTotalOficial: adeudaPrev + stats.adeudaFinal,
       adeudaTotalConProv: adeudaPrev + stats.adeudaFinal + stats.adeudaProv,
@@ -317,21 +319,30 @@ function renderClasificacion(data) {
     .join("");
 }
 
+function lineupForJornada(player, jornada) {
+  const byRound = player.lineups_by_round || {};
+  if (byRound[String(jornada)]) return byRound[String(jornada)];
+  if (jornada === player._currentJornada || jornada === undefined) {
+    return player.lineup || null;
+  }
+  return null;
+}
+
 function renderJornadaInto(data, jornada, targetId, { expandable = false } = {}) {
   const list = document.getElementById(targetId);
   const potRules = data.pot_rules || {};
-  const showXi = expandable && jornada === data.current_jornada;
   const rows = data.players
     .map((p) => {
       const entry = p.entries.find((e) => e.jornada === jornada);
       if (!entry) return null;
+      const lineup = expandable ? lineupForJornada(p, jornada) : null;
       return {
         name: p.name,
         pos: entry.pos,
         points: entry.points,
         bonus: entry.bonus,
         status: entry.status,
-        lineup: p.lineup,
+        lineup,
       };
     })
     .filter(Boolean)
@@ -355,19 +366,34 @@ function renderJornadaInto(data, jornada, targetId, { expandable = false } = {})
           : pay
             ? `Bote ${euro(fee)}`
             : "—";
+      const hasXi = expandable && r.lineup?.starters?.length;
       const xiSum =
-        showXi && r.lineup?.points_sum != null
-          ? ` · XI ${r.lineup.points_sum} pts`
-          : "";
-      const detail = showXi ? renderLineupDetail(r.lineup) : "";
-      return `<li class="rank-item ${pay ? "pay" : ""} ${showXi ? "expandable" : ""}">
-        <div class="rank-row">
-          <span class="pos">${r.pos}º</span>
-          <span class="rank-name">${escapeHtml(r.name)}</span>
-          <span class="muted">${pts}${xiSum}</span>
-          <span>${prize}</span>
-        </div>
-        ${detail}
+        hasXi && r.lineup?.points_sum != null ? ` · XI ${r.lineup.points_sum} pts` : "";
+      const formation = hasXi && r.lineup?.formation ? ` · ${r.lineup.formation}` : "";
+      const rowInner = `
+        <span class="pos">${r.pos}º</span>
+        <span class="rank-name">${escapeHtml(r.name)}</span>
+        <span class="muted">${pts}${xiSum}${escapeHtml(formation)}</span>
+        <span>${prize}</span>`;
+      if (!expandable) {
+        return `<li class="rank-item ${pay ? "pay" : ""}">
+          <div class="rank-row">${rowInner}</div>
+        </li>`;
+      }
+      if (!hasXi) {
+        return `<li class="rank-item ${pay ? "pay" : ""}">
+          <div class="rank-row">${rowInner}</div>
+          <p class="hint lineup-missing">Sin alineación guardada para esta jornada.</p>
+        </li>`;
+      }
+      return `<li class="rank-item ${pay ? "pay" : ""} expandable">
+        <details>
+          <summary class="rank-row">
+            ${rowInner}
+            <span class="expand-hint">Alineación</span>
+          </summary>
+          ${renderLineupDetail(r.lineup)}
+        </details>
       </li>`;
     })
     .join("")}</ol>`;
@@ -476,10 +502,7 @@ function renderJornadaTab(data) {
     const postponeNote = postponed.length
       ? ` Atención: pendiente ${postponed.join(", ")}.`
       : "";
-    const xiNote =
-      j === data.current_jornada
-        ? " Debajo de cada manager: once y puntos por jugador."
-        : "";
+    const xiNote = " Pulsa un manager para ver su alineación de esa jornada.";
     document.getElementById("jornadaHint").textContent =
       (status === "final"
         ? `Resultado oficial cerrado en Biwenger${
@@ -489,7 +512,7 @@ function renderJornadaTab(data) {
           ? `Jornada abierta${
               meta.started_at ? ` · ${formatEpoch(meta.started_at)}` : ""
             }, pero aún no hay puntos nuevos. No suma al bote.`
-          : "Resultado provisional: puntos del once (última puntuación Biwenger) y ranking estimado.") +
+          : "Resultado provisional: puntos del once y ranking estimado.") +
       postponeNote +
       xiNote;
     renderFixtures(data, "jornadaFixtures");
@@ -633,8 +656,6 @@ function bindColumnFilters(headId, columns, rows, stateKey, onApply) {
 }
 
 function renderMercado(data) {
-  const averageValue = data.players.length ? data.totalTeamValue / data.players.length : 0;
-  const highest = data.playersByValue[0];
   const sales = (data.market?.sales || []).map((s) => ({
     ...s,
     player: s.player || `#${s.player_id}`,
@@ -646,24 +667,27 @@ function renderMercado(data) {
     until_label: formatEpoch(s.until),
   }));
 
-  const filteredSales = sales.filter((row) =>
-    rowPassesFilters(row, filterState.sales, SALES_COLS)
-  );
-
-  document.getElementById("mercadoKpis").innerHTML = `
-    <div class="kpi"><span>Ventas (filtro)</span><strong>${filteredSales.length}/${sales.length}</strong></div>
-    <div class="kpi"><span>Valor total liga</span><strong>${moneyM(data.totalTeamValue)}</strong></div>
-    <div class="kpi"><span>Media por plantilla</span><strong>${moneyM(averageValue)}</strong></div>
-    <div class="kpi"><span>Variación diaria</span><strong class="${
-      data.totalDailyChange >= 0 ? "pos-up" : "pos-down"
-    }">${data.totalDailyChange > 0 ? "+" : ""}${moneyM(data.totalDailyChange)}</strong></div>
-  `;
+  const closingSoon = sales
+    .filter((s) => s.until)
+    .slice()
+    .sort((a, b) => (a.until || 0) - (b.until || 0))
+    .slice(0, 1)[0];
 
   const paintSales = () => {
     const rows = sales.filter((row) => rowPassesFilters(row, filterState.sales, SALES_COLS));
     bindColumnFilters("salesHead", SALES_COLS, sales, "sales", paintSales);
-    const clearBtn = document.getElementById("clearSalesFilters");
-    clearBtn.hidden = !activeFilterCount(filterState.sales);
+    document.getElementById("clearSalesFilters").hidden = !activeFilterCount(filterState.sales);
+    document.getElementById("mercadoKpis").innerHTML = `
+      <div class="kpi"><span>En venta</span><strong>${rows.length}<small>/${sales.length}</small></strong></div>
+      <div class="kpi"><span>Cierra antes</span><strong>${
+        closingSoon ? escapeHtml(closingSoon.player) : "—"
+      }</strong></div>
+      <div class="kpi"><span>Precio medio</span><strong>${
+        rows.length
+          ? moneyM(rows.reduce((s, r) => s + (Number(r.price) || 0), 0) / rows.length)
+          : "—"
+      }</strong></div>
+    `;
     const body = document.getElementById("salesBody");
     if (!rows.length) {
       body.innerHTML = `<tr><td colspan="${SALES_COLS.length}" class="muted">${
@@ -686,10 +710,21 @@ function renderMercado(data) {
         )
         .join("");
     }
-    document.getElementById("mercadoKpis").querySelector(".kpi strong").textContent =
-      `${rows.length}/${sales.length}`;
   };
   paintSales();
+}
+
+function renderPlantillas(data) {
+  const averageValue = data.players.length ? data.totalTeamValue / data.players.length : 0;
+  const highest = data.playersByValue[0];
+  document.getElementById("plantillasKpis").innerHTML = `
+    <div class="kpi"><span>Valor total liga</span><strong>${moneyM(data.totalTeamValue)}</strong></div>
+    <div class="kpi"><span>Media por plantilla</span><strong>${moneyM(averageValue)}</strong></div>
+    <div class="kpi"><span>Variación diaria</span><strong class="${
+      data.totalDailyChange >= 0 ? "pos-up" : "pos-down"
+    }">${data.totalDailyChange > 0 ? "+" : ""}${moneyM(data.totalDailyChange)}</strong></div>
+    <div class="kpi"><span>Más valiosa</span><strong>${escapeHtml(highest?.name || "—")}</strong></div>
+  `;
 
   const valueRows = data.playersByValue.map((p, index) => {
     const daily = Number(p.team_value_inc) || 0;
@@ -702,7 +737,6 @@ function renderMercado(data) {
       team_size: String(p.team_size ?? "—"),
       formation: p.formation || "—",
       last_access: formatEpoch(p.last_access),
-      _raw: p,
       _daily: daily,
       _top: p.name === highest?.name,
     };
@@ -1263,6 +1297,7 @@ function applyData(raw) {
   renderClasificacion(data);
   renderJornadaTab(data);
   renderMercado(data);
+  renderPlantillas(data);
   renderMovimientos(data);
   renderBote(data, document.getElementById("searchBote").value);
   renderHistorico(data);
@@ -1354,7 +1389,7 @@ async function boot() {
   });
   document.getElementById("clearValueFilters")?.addEventListener("click", () => {
     filterState.value = {};
-    renderMercado(enrich(window.__ligaRaw));
+    renderPlantillas(enrich(window.__ligaRaw));
   });
   document.getElementById("clearMovFilters")?.addEventListener("click", () => {
     filterState.mov = {};

@@ -22,6 +22,7 @@
         <button type="button" class="nav-item" data-tab="clasificacion">Clasificación</button>
         <button type="button" class="nav-item" data-tab="jornada">Jornada en vivo</button>
         <button type="button" class="nav-item" data-tab="mercado">Mercado</button>
+        <button type="button" class="nav-item" data-tab="plantillas">Valor plantillas</button>
         <button type="button" class="nav-item" data-tab="movimientos">Movimientos</button>
         <button type="button" class="nav-item" data-tab="bote">Bote y adeudas</button>
         <button type="button" class="nav-item" data-tab="historico">Histórico</button>
@@ -114,12 +115,18 @@
         </section>
 
         <section class="tab" id="tab-mercado" data-title="Mercado">
-          <div class="kpi-grid" id="mercadoKpis"></div>
-          <article class="panel">
+          <div class="market-hero">
+            <div>
+              <p class="market-kicker">Transferencias abiertas</p>
+              <h2 class="market-title">Mercado de la liga</h2>
+              <p class="hint">Jugadores a la venta · filtra por columna como en una hoja de cálculo.</p>
+            </div>
+            <div class="kpi-grid market-kpis" id="mercadoKpis"></div>
+          </div>
+          <article class="panel market-panel">
             <div class="panel-head">
               <div>
                 <h2>Ventas abiertas</h2>
-                <p class="hint">Filtros por columna (estilo hoja de cálculo). AND entre columnas.</p>
               </div>
               <button type="button" class="btn-secondary" id="clearSalesFilters" hidden>Limpiar filtros</button>
             </div>
@@ -132,11 +139,15 @@
               </table>
             </div>
           </article>
+        </section>
+
+        <section class="tab" id="tab-plantillas" data-title="Valor plantillas">
+          <div class="kpi-grid" id="plantillasKpis"></div>
           <article class="panel">
             <div class="panel-head">
               <div>
                 <h2>Valor de plantillas</h2>
-                <p class="hint">Valor, variación diaria y rendimiento por millón invertido.</p>
+                <p class="hint">Valor de mercado, variación diaria y rendimiento por millón.</p>
               </div>
               <button type="button" class="btn-secondary" id="clearValueFilters" hidden>Limpiar filtros</button>
             </div>
