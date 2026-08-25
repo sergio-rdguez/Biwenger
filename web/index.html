@@ -21,6 +21,7 @@
         <button type="button" class="nav-item active" data-tab="resumen">Resumen</button>
         <button type="button" class="nav-item" data-tab="clasificacion">Clasificación</button>
         <button type="button" class="nav-item" data-tab="jornada">Jornada en vivo</button>
+        <button type="button" class="nav-item" data-tab="mercado">Plantillas y mercado</button>
         <button type="button" class="nav-item" data-tab="bote">Bote y adeudas</button>
         <button type="button" class="nav-item" data-tab="historico">Histórico</button>
         <button type="button" class="nav-item" data-tab="managers">Managers</button>
@@ -66,6 +67,10 @@
             </div>
             <div id="resumenJornada"></div>
           </article>
+          <article class="panel">
+            <div class="panel-head"><h2>Datos destacados</h2></div>
+            <div class="insight-grid" id="resumenInsights"></div>
+          </article>
         </section>
 
         <section class="tab" id="tab-clasificacion" data-title="Clasificación">
@@ -106,15 +111,47 @@
           </article>
         </section>
 
+        <section class="tab" id="tab-mercado" data-title="Plantillas y mercado">
+          <div class="kpi-grid" id="mercadoKpis"></div>
+          <article class="panel">
+            <div class="panel-head">
+              <div>
+                <h2>Valor de plantillas</h2>
+                <p class="hint">Valor, variación diaria y rendimiento por millón invertido.</p>
+              </div>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th># valor</th>
+                    <th>Manager</th>
+                    <th>Valor</th>
+                    <th>± día</th>
+                    <th>Pts / M€</th>
+                    <th>Jugadores</th>
+                    <th>Formación</th>
+                    <th>Último acceso</th>
+                  </tr>
+                </thead>
+                <tbody id="mercadoBody"></tbody>
+              </table>
+            </div>
+          </article>
+        </section>
+
         <section class="tab" id="tab-bote" data-title="Bote y adeudas">
           <div class="kpi-grid kpi-3" id="boteKpis"></div>
           <article class="panel">
             <div class="panel-head">
               <h2>Adeudas por manager</h2>
-              <label class="search-wrap">
-                <span class="sr-only">Buscar</span>
-                <input type="search" id="searchBote" placeholder="Buscar manager…" />
-              </label>
+              <div class="panel-actions">
+                <label class="search-wrap">
+                  <span class="sr-only">Buscar</span>
+                  <input type="search" id="searchBote" placeholder="Buscar manager…" />
+                </label>
+                <button type="button" class="btn-secondary" id="exportBote">Exportar CSV</button>
+              </div>
             </div>
             <div class="table-wrap">
               <table>

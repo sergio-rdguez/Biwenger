@@ -1,0 +1,13 @@
+---
+description: Proyecto BOTE/Biwenger — leer agents y skills de .github antes de mantener o evolucionar
+alwaysApply: true
+---
+
+# BOTE / Biwenger
+
+Antes de sync, UI, bote o deploy, lee `.github/AGENTS.md` y el skill/agente adecuado en:
+
+- `.github/agents/`
+- `.github/skills/*/SKILL.md`
+
+Reglas duras: no commitear `.env`; escribir `data/liga.json` y `web/data/liga.json`; Bonilla fuera; Pages = estático (`web/`); español al usuario.

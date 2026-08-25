@@ -164,7 +164,7 @@ def extract_jornada_number(round_obj: dict) -> int | None:
 
 
 def board_rounds(board: list[dict]) -> dict[int, dict]:
-    """round_id -> {number, finished, results}."""
+    """round_id -> metadata and final results."""
     by_id: dict[int, dict] = {}
     for event in board:
         content = event.get("content")
@@ -179,17 +179,29 @@ def board_rounds(board: list[dict]) -> dict[int, dict]:
             continue
         rid = int(rid)
         entry = by_id.setdefault(
-            rid, {"number": num, "finished": False, "results": None}
+            rid,
+            {
+                "number": num,
+                "round_id": rid,
+                "started_at": None,
+                "finished_at": None,
+                "finished": False,
+                "results": None,
+            },
         )
         entry["number"] = num
-        if event.get("type") == "roundFinished":
+        if event.get("type") == "roundStarted":
+            entry["started_at"] = event.get("date")
+        elif event.get("type") == "roundFinished":
             entry["finished"] = True
+            entry["finished_at"] = event.get("date")
             results = content.get("results")
             entry["results"] = results if isinstance(results, list) else []
     return by_id
 
 
-def rank_results(results: list[dict]) -> list[tuple[str, int, int]]:
+def rank_results(results: list[dict]) -> list[dict]:
+    """Normalize final board results while preserving Biwenger's order."""
     scored = []
     for idx, row in enumerate(results or []):
         user = row.get("user") or {}
@@ -204,6 +216,8 @@ def rank_results(results: list[dict]) -> list[tuple[str, int, int]]:
                 if isinstance(row.get("position"), int)
                 else None,
                 "idx": idx,
+                "bonus": int(row.get("bonus") or 0),
+                "reason": row.get("reason"),
             }
         )
     if any(s["explicit"] is not None for s in scored):
@@ -212,7 +226,9 @@ def rank_results(results: list[dict]) -> list[tuple[str, int, int]]:
         )
     else:
         scored.sort(key=lambda s: (-s["points"], s["idx"]))
-    return [(s["name"], i, s["points"]) for i, s in enumerate(scored, start=1)]
+    for fallback_position, result in enumerate(scored, start=1):
+        result["position"] = result["explicit"] or fallback_position
+    return scored
 
 
 def set_round(
@@ -221,13 +237,37 @@ def set_round(
     position: int,
     status: str,
     points: int | None = None,
+    **extra,
 ) -> None:
     player["positions"][str(jornada)] = int(position)
     player["rounds"][str(jornada)] = {
         "position": int(position),
         "status": status,
         "points": points,
+        **{key: value for key, value in extra.items() if value is not None},
     }
+
+
+def is_mirrored_prematch(
+    live_rows: list[tuple[str, int, int | None]],
+    players_by_name: dict[str, dict],
+    previous_jornada: int,
+    finished_jornadas: set[int],
+) -> bool:
+    """True when the live endpoint still mirrors the previous final round."""
+    if not live_rows or previous_jornada not in finished_jornadas:
+        return False
+    for name, _position, points in live_rows:
+        previous = (
+            players_by_name.get(name, {}).get("rounds", {}).get(str(previous_jornada))
+        )
+        if (
+            not previous
+            or previous.get("status") != "final"
+            or previous.get("points") != points
+        ):
+            return False
+    return True
 
 
 def sync(dry_run: bool = False) -> dict:
@@ -269,6 +309,7 @@ def sync(dry_run: bool = False) -> dict:
 
     standings = league_data.get("standings") or []
     live_standings = (rounds_data.get("league") or {}).get("standings") or []
+    live_by_id = {row.get("id"): row for row in live_standings}
     current_round_id = (rounds_data.get("round") or {}).get("id")
     current_round_id = int(current_round_id) if current_round_id is not None else None
 
@@ -313,7 +354,8 @@ def sync(dry_run: bool = False) -> dict:
         if not meta["finished"] or not meta["results"]:
             continue
         jornada = meta["number"]
-        for remote_name, place, pts in rank_results(meta["results"]):
+        for result in rank_results(meta["results"]):
+            remote_name = result["name"]
             web_name = normalize_name(remote_name, aliases)
             if web_name.lower() == "bonilla":
                 continue
@@ -322,7 +364,16 @@ def sync(dry_run: bool = False) -> dict:
             player = by_name.setdefault(
                 web_name, {"name": web_name, "positions": {}, "rounds": {}}
             )
-            set_round(player, jornada, place, "final", pts)
+            set_round(
+                player,
+                jornada,
+                result["position"],
+                "final",
+                result["points"],
+                bonus=result["bonus"],
+                bonus_reason=result["reason"],
+                round_id=meta["round_id"],
+            )
 
     # 2) Clasificación de temporada + lastPositions (rellena huecos)
     for row in standings:
@@ -346,12 +397,27 @@ def sync(dry_run: bool = False) -> dict:
         player["position_inc"] = row.get("positionInc")
         player["last_access"] = row.get("lastAccess")
         player["team_size"] = row.get("teamSize")
+        live = live_by_id.get(row.get("id")) or {}
+        lineup = live.get("lineup") if isinstance(live.get("lineup"), dict) else {}
+        player["formation"] = lineup.get("type")
+        player["lineup_counting"] = lineup.get("count")
 
         for idx, pos in enumerate(row.get("lastPositions") or []):
             jornada = idx + 1
-            # No pisar un final ya cargado desde el tablón
             existing = player["rounds"].get(str(jornada))
             if existing and existing.get("status") == "final":
+                # lastPositions es la posición explícita de Biwenger. Conserva
+                # puntos/premio del tablón, pero úsala frente al orden inferido.
+                set_round(
+                    player,
+                    jornada,
+                    int(pos),
+                    "final",
+                    existing.get("points"),
+                    bonus=existing.get("bonus"),
+                    bonus_reason=existing.get("bonus_reason"),
+                    round_id=existing.get("round_id"),
+                )
                 continue
             status = "final" if jornada in finished_nums else "provisional"
             set_round(player, jornada, int(pos), status, existing.get("points") if existing else None)
@@ -366,6 +432,10 @@ def sync(dry_run: bool = False) -> dict:
                 "team_value_inc": player["team_value_inc"],
                 "position_inc": player.get("position_inc"),
                 "icon": player.get("icon"),
+                "team_size": player.get("team_size"),
+                "last_access": player.get("last_access"),
+                "formation": player.get("formation"),
+                "lineup_counting": player.get("lineup_counting"),
             }
         )
 
@@ -376,7 +446,6 @@ def sync(dry_run: bool = False) -> dict:
         # Si todos los puntos coinciden con la jornada final anterior,
         # Biwenger aún no ha empezado a puntuar: marcar prematch (sin bote).
         prev_j = current_jornada - 1
-        mirrored = True
         live_rows = []
         for row in live_standings:
             remote_name = (row.get("name") or "").strip()
@@ -390,28 +459,38 @@ def sync(dry_run: bool = False) -> dict:
                 continue
             pts = int(row["points"]) if row.get("points") is not None else None
             live_rows.append((web_name, int(pos), pts))
-            prev = by_name.get(web_name, {}).get("rounds", {}).get(str(prev_j))
-            if not prev or prev.get("status") != "final" or prev.get("points") != pts:
-                mirrored = False
 
-        status = "prematch" if (mirrored and prev_j in finished_nums and live_rows) else "provisional"
+        status = (
+            "prematch"
+            if is_mirrored_prematch(live_rows, by_name, prev_j, finished_nums)
+            else "provisional"
+        )
         if status == "prematch":
             live_status = "prematch"
             print(
                 f"Jornada {current_jornada}: prematch (sin puntos nuevos aún; no suma al bote)"
             )
 
-        for web_name, pos, pts in live_rows:
-            player = by_name.setdefault(
-                web_name, {"name": web_name, "positions": {}, "rounds": {}}
-            )
-            set_round(player, current_jornada, pos, status, pts)
+        if status == "provisional":
+            for web_name, pos, pts in live_rows:
+                player = by_name.setdefault(
+                    web_name, {"name": web_name, "positions": {}, "rounds": {}}
+                )
+                set_round(
+                    player,
+                    current_jornada,
+                    pos,
+                    status,
+                    pts,
+                    round_id=current_round_id,
+                )
 
     rounds_meta = {}
     all_j = set()
     for p in by_name.values():
         all_j.update(int(j) for j in p.get("positions", {}))
     all_j.add(current_jornada)
+    rounds_by_number = {meta["number"]: meta for meta in rounds_by_id.values()}
     for j in sorted(all_j):
         sample_status = None
         for p in by_name.values():
@@ -430,7 +509,9 @@ def sync(dry_run: bool = False) -> dict:
         rounds_meta[str(j)] = {
             "number": j,
             "status": status,
-            "round_id": current_round_id if j == current_jornada else None,
+            "round_id": (rounds_by_number.get(j) or {}).get("round_id"),
+            "started_at": (rounds_by_number.get(j) or {}).get("started_at"),
+            "finished_at": (rounds_by_number.get(j) or {}).get("finished_at"),
         }
 
     players = sorted(by_name.values(), key=lambda p: (p.get("season_position") or 999))

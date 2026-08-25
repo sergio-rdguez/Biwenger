@@ -9,7 +9,7 @@ pip install -r requirements.txt
 python serve.py
 ```
 
-Abre http://127.0.0.1:8080/web/
+Abre http://127.0.0.1:8765/web/
 
 - `data/liga.json` → temporada activa **2026-2027** (+ arrastre del bote 25/26)
 - `data/temporada-2025-2026.json` → histórico completo del Excel (bote acumulado)
@@ -34,7 +34,8 @@ python sync_biwenger.py
 | `data/liga.json` | Temporada activa **2026-2027** + arrastre del bote 25/26 |
 | `data/temporada-2025-2026.json` | Histórico completo (Excel) |
 
-La web muestra por manager: deuda **25/26** + deuda **26/27** + **total**.
+La web muestra clasificación, jornada oficial/en vivo, plantillas, mercado,
+premios, deuda **25/26** + deuda **26/27** y el **total**.
 
 ## Qué calcula la web
 
@@ -43,8 +44,15 @@ Misma lógica que el Excel **Bote** para la temporada activa:
 | Concepto | Regla |
 |----------|--------|
 | Adeuda 26/27 | Suma por quedar 8º–12º (0,5 / 1 / 1,5 / 2 / 2,5 €) |
-| Acumulado 25/26 | Bote cerrado del Excel (291 €) |
+| Acumulado 25/26 | Bote cerrado del Excel sin Bonilla (286,50 €) |
 | Total a deber | Acumulado + adeuda nueva |
+
+Los estados de jornada son:
+
+- `final`: puntos, puesto y premio tomados del cierre de Biwenger.
+- `provisional`: datos en vivo; se muestran como estimación.
+- `prematch`: jornada abierta, pero Biwenger aún replica la anterior; no se
+  guardan posiciones ficticias ni se suma al bote.
 
 ## Publicar en GitHub Pages (gratis)
 
@@ -73,7 +81,10 @@ El botón «Importar Biwenger» solo aparece en local (`python serve.py`). En Pa
 | `serve.py` | Servidor local |
 | `Biwenger_2026.xlsx` | Origen histórico (opcional) |
 
-## Privacidad
+## Agents y skills (Cursor)
 
-- La web solo muestra lo que hay en `liga.json` (nombres de managers y posiciones).
-- El login de Biwenger solo ocurre en tu máquina al lanzar el sync.
+Punto de entrada: [`.github/AGENTS.md`](.github/AGENTS.md)
+
+- Agentes: `.github/agents/`
+- Skills: `.github/skills/`
+- Descubrimiento Cursor: `.cursor/skills/` + regla `.cursor/rules/biwenger-project.mdc`

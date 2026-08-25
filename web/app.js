@@ -5,6 +5,7 @@ const TITLES = {
   resumen: "Resumen",
   clasificacion: "Clasificación",
   jornada: "Jornada en vivo",
+  mercado: "Plantillas y mercado",
   bote: "Bote y adeudas",
   historico: "Histórico",
   managers: "Managers",
@@ -45,6 +46,24 @@ function formatUpdated(iso) {
   }
 }
 
+function formatEpoch(seconds) {
+  if (!seconds) return "—";
+  try {
+    return new Intl.DateTimeFormat("es-ES", {
+      dateStyle: "short",
+      timeStyle: "short",
+    }).format(new Date(Number(seconds) * 1000));
+  } catch {
+    return "—";
+  }
+}
+
+function statusLabel(status) {
+  if (status === "final") return "Final";
+  if (status === "prematch") return "Pre-partido";
+  return "Provisional";
+}
+
 function carryMap(data) {
   const map = new Map();
   for (const p of data.previous_season?.players || []) {
@@ -69,6 +88,8 @@ function computeStats(player, potRules, lastPlace) {
         pos,
         status: meta.status || "provisional",
         points: meta.points,
+        bonus: meta.bonus,
+        roundId: meta.round_id,
       };
     })
     .sort((a, b) => a.jornada - b.jornada);
@@ -78,6 +99,7 @@ function computeStats(player, potRules, lastPlace) {
   let pag = 0;
   let adeudaFinal = 0;
   let adeudaProv = 0;
+  let bonusTotal = 0;
 
   for (const row of entries) {
     if (row.pos === 1) prim += 1;
@@ -91,9 +113,28 @@ function computeStats(player, potRules, lastPlace) {
       else if (row.status === "provisional") adeudaProv += fee;
       // prematch: se muestra ranking pero no suma al bote
     }
+    if (row.status === "final") bonusTotal += Number(row.bonus) || 0;
   }
 
-  return { ult, prim, pag, adeudaFinal, adeudaProv, entries };
+  const official = entries.filter((row) => row.status === "final");
+  const averagePosition = official.length
+    ? official.reduce((sum, row) => sum + row.pos, 0) / official.length
+    : null;
+  const bestPosition = official.length ? Math.min(...official.map((row) => row.pos)) : null;
+  const worstPosition = official.length ? Math.max(...official.map((row) => row.pos)) : null;
+
+  return {
+    ult,
+    prim,
+    pag,
+    adeudaFinal,
+    adeudaProv,
+    bonusTotal,
+    averagePosition,
+    bestPosition,
+    worstPosition,
+    entries,
+  };
 }
 
 function enrich(data) {
@@ -110,6 +151,8 @@ function enrich(data) {
       adeudaPrev,
       adeudaTotalOficial: adeudaPrev + stats.adeudaFinal,
       adeudaTotalConProv: adeudaPrev + stats.adeudaFinal + stats.adeudaProv,
+      pointsPerMillion:
+        Number(p.team_value) > 0 ? (Number(p.points) || 0) / (Number(p.team_value) / 1_000_000) : 0,
     };
   });
 
@@ -128,6 +171,11 @@ function enrich(data) {
     playersByDebt: [...players].sort(
       (a, b) => b.adeudaTotalConProv - a.adeudaTotalConProv || a.name.localeCompare(b.name, "es")
     ),
+    playersByValue: [...players].sort(
+      (a, b) => (Number(b.team_value) || 0) - (Number(a.team_value) || 0)
+    ),
+    totalTeamValue: players.reduce((sum, p) => sum + (Number(p.team_value) || 0), 0),
+    totalDailyChange: players.reduce((sum, p) => sum + (Number(p.team_value_inc) || 0), 0),
     acumulado,
     adeudadoOficial,
     adeudadoProv,
@@ -186,9 +234,37 @@ function renderResumen(data) {
   const j = data.current_jornada || 1;
   const status = roundStatus(data, j);
   const badge = document.getElementById("resumenJornadaBadge");
-  badge.textContent = status === "final" ? "Final" : "Provisional";
+  badge.textContent = statusLabel(status);
   badge.className = `badge ${status}`;
   renderJornadaInto(data, j, "resumenJornada");
+
+  const mostValuable = data.playersByValue[0];
+  const bestEfficiency = [...data.players].sort(
+    (a, b) => b.pointsPerMillion - a.pointsPerMillion
+  )[0];
+  const biggestRise = [...data.players].sort(
+    (a, b) => (Number(b.team_value_inc) || 0) - (Number(a.team_value_inc) || 0)
+  )[0];
+  const mostBonus = [...data.players].sort((a, b) => b.bonusTotal - a.bonusTotal)[0];
+  const insights = [
+    ["Plantilla más valiosa", mostValuable?.name, moneyM(mostValuable?.team_value)],
+    [
+      "Mejor rendimiento",
+      bestEfficiency?.name,
+      `${bestEfficiency?.pointsPerMillion.toFixed(2) || "0.00"} pts/M€`,
+    ],
+    ["Mayor subida diaria", biggestRise?.name, moneyM(biggestRise?.team_value_inc)],
+    ["Más premios", mostBonus?.name, moneyM(mostBonus?.bonusTotal)],
+  ];
+  document.getElementById("resumenInsights").innerHTML = insights
+    .map(
+      ([label, name, value]) => `<div class="insight">
+        <span>${label}</span>
+        <strong>${escapeHtml(name || "—")}</strong>
+        <small>${value}</small>
+      </div>`
+    )
+    .join("");
 }
 
 function renderClasificacion(data) {
@@ -243,6 +319,7 @@ function renderJornadaInto(data, jornada, targetId) {
         name: p.name,
         pos: entry.pos,
         points: entry.points,
+        bonus: entry.bonus,
         status: entry.status,
       };
     })
@@ -261,11 +338,17 @@ function renderJornadaInto(data, jornada, targetId) {
       const pay = typeof fee === "number";
       const pts =
         r.points != null ? `${r.points} pts` : r.status === "provisional" ? "en vivo" : "—";
+      const prize =
+        r.status === "final" && r.bonus
+          ? `Premio ${moneyM(r.bonus)}${pay ? ` · Bote ${euro(fee)}` : ""}`
+          : pay
+            ? `Bote ${euro(fee)}`
+            : "—";
       return `<li class="${pay ? "pay" : ""}">
         <span class="pos">${r.pos}º</span>
         <span>${escapeHtml(r.name)}</span>
         <span class="muted">${pts}</span>
-        <span>${pay ? euro(fee) : "—"}</span>
+        <span>${prize}</span>
       </li>`;
     })
     .join("")}</ol>`;
@@ -297,17 +380,60 @@ function renderJornadaTab(data) {
   const paint = () => {
     const j = Number(select.value);
     const status = roundStatus(data, j);
+    const meta = data.rounds_meta?.[String(j)] || {};
     document.getElementById("jornadaHeading").textContent = `Jornada ${j}`;
     document.getElementById("jornadaHint").textContent =
       status === "final"
-        ? "Resultado oficial cerrado en Biwenger."
+        ? `Resultado oficial cerrado en Biwenger${
+            meta.finished_at ? ` · ${formatEpoch(meta.finished_at)}` : ""
+          }.`
         : status === "prematch"
-          ? "Jornada abierta en Biwenger, pero aún no hay puntos nuevos (pre-partido). No suma al bote."
-          : "Resultado provisional: se actualiza mientras se juegan los partidos.";
+          ? `Jornada abierta${
+              meta.started_at ? ` · ${formatEpoch(meta.started_at)}` : ""
+            }, pero aún no hay puntos nuevos. No suma al bote.`
+          : "Resultado provisional: puntos y posiciones se actualizan mientras se juega.";
     renderJornadaInto(data, j, "jornadaList");
   };
   select.onchange = paint;
   paint();
+}
+
+function renderMercado(data) {
+  const averageValue = data.players.length ? data.totalTeamValue / data.players.length : 0;
+  const highest = data.playersByValue[0];
+  const bestEfficiency = [...data.players].sort(
+    (a, b) => b.pointsPerMillion - a.pointsPerMillion
+  )[0];
+  document.getElementById("mercadoKpis").innerHTML = `
+    <div class="kpi"><span>Valor total liga</span><strong>${moneyM(data.totalTeamValue)}</strong></div>
+    <div class="kpi"><span>Media por plantilla</span><strong>${moneyM(averageValue)}</strong></div>
+    <div class="kpi"><span>Variación diaria</span><strong class="${
+      data.totalDailyChange >= 0 ? "pos-up" : "pos-down"
+    }">${data.totalDailyChange > 0 ? "+" : ""}${moneyM(data.totalDailyChange)}</strong></div>
+    <div class="kpi"><span>Mejor pts/M€</span><strong>${escapeHtml(
+      bestEfficiency?.name || "—"
+    )}</strong></div>
+  `;
+
+  document.getElementById("mercadoBody").innerHTML = data.playersByValue
+    .map((p, index) => {
+      const daily = Number(p.team_value_inc) || 0;
+      return `<tr>
+        <td>${index + 1}</td>
+        <td class="name-cell">${escapeHtml(p.name)}${
+          p.name === highest?.name ? ' <span class="tag">Top valor</span>' : ""
+        }</td>
+        <td>${moneyM(p.team_value)}</td>
+        <td class="${daily >= 0 ? "pos-up" : "pos-down"}">${
+          daily > 0 ? "+" : ""
+        }${moneyM(daily)}</td>
+        <td>${p.pointsPerMillion.toFixed(2)}</td>
+        <td>${p.team_size ?? "—"}</td>
+        <td>${escapeHtml(p.formation || "—")}</td>
+        <td>${formatEpoch(p.last_access)}</td>
+      </tr>`;
+    })
+    .join("");
 }
 
 function renderBote(data, query = "") {
@@ -333,6 +459,45 @@ function renderBote(data, query = "") {
       </tr>`
     )
     .join("");
+}
+
+function exportBoteCsv(data) {
+  const headers = [
+    "Manager",
+    "Arrastre 25/26",
+    "Oficial 26/27",
+    "Provisional",
+    "Total estimado",
+    "Primeros",
+    "Últimos",
+    "Jornadas pagando",
+  ];
+  const rows = data.playersByDebt.map((p) => [
+    p.name,
+    p.adeudaPrev,
+    p.adeudaFinal,
+    p.adeudaProv,
+    p.adeudaTotalConProv,
+    p.prim,
+    p.ult,
+    p.pag,
+  ]);
+  const csv = [headers, ...rows]
+    .map((row) =>
+      row
+        .map((value) => `"${String(value).replaceAll('"', '""')}"`)
+        .join(";")
+    )
+    .join("\r\n");
+  const blob = new Blob(["\ufeff", csv], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `bote-${data.season || "liga"}.csv`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
 }
 
 function renderHistorico(data) {
@@ -406,6 +571,13 @@ function renderManagers(data, query = "") {
           <dt>Valor</dt><dd>${moneyM(p.team_value)}</dd>
           <dt>Adeuda total</dt><dd class="money">${euro(p.adeudaTotalConProv)}</dd>
           <dt>Prim / Últ</dt><dd>${p.prim} / ${p.ult}</dd>
+          <dt>Posición media</dt><dd>${
+            p.averagePosition == null ? "—" : p.averagePosition.toFixed(1)
+          }</dd>
+          <dt>Mejor / peor</dt><dd>${p.bestPosition ?? "—"}º / ${
+            p.worstPosition ?? "—"
+          }º</dd>
+          <dt>Premios</dt><dd>${moneyM(p.bonusTotal)}</dd>
         </dl>
         <div class="chips">${chips || "<span class='muted'>Sin jornadas</span>"}</div>
       </article>`;
@@ -445,6 +617,7 @@ function applyData(raw) {
   renderResumen(data);
   renderClasificacion(data);
   renderJornadaTab(data);
+  renderMercado(data);
   renderBote(data, document.getElementById("searchBote").value);
   renderHistorico(data);
   renderManagers(data, document.getElementById("searchManagers").value);
@@ -525,6 +698,9 @@ async function boot() {
   });
   document.getElementById("searchManagers").addEventListener("input", (e) => {
     renderManagers(enrich(window.__ligaRaw), e.target.value);
+  });
+  document.getElementById("exportBote").addEventListener("click", () => {
+    exportBoteCsv(enrich(window.__ligaRaw));
   });
 }
 

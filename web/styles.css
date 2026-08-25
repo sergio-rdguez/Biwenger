@@ -300,6 +300,29 @@ main {
   margin-bottom: 0.85rem;
 }
 
+.panel-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.55rem;
+}
+
+.btn-secondary {
+  appearance: none;
+  border: 1px solid rgba(226, 176, 72, 0.35);
+  background: rgba(226, 176, 72, 0.08);
+  color: var(--accent);
+  font: inherit;
+  font-weight: 700;
+  border-radius: 999px;
+  padding: 0.5rem 0.9rem;
+  cursor: pointer;
+}
+
+.btn-secondary:hover {
+  background: rgba(226, 176, 72, 0.14);
+}
+
 .panel-head h2,
 .rules h2 {
   margin: 0;
@@ -333,6 +356,11 @@ main {
 .badge.final {
   color: var(--accent);
   border-color: rgba(226, 176, 72, 0.35);
+}
+
+.badge.prematch {
+  color: var(--muted);
+  border-style: dashed;
 }
 
 .table-wrap {
@@ -386,6 +414,19 @@ tbody tr:hover {
   color: var(--danger);
 }
 
+.tag {
+  display: inline-flex;
+  margin-left: 0.35rem;
+  border-radius: 999px;
+  padding: 0.12rem 0.42rem;
+  background: rgba(226, 176, 72, 0.12);
+  color: var(--accent);
+  font-size: 0.66rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
 .rank-list {
   list-style: none;
   margin: 0;
@@ -429,6 +470,40 @@ tbody tr:hover {
   gap: 1rem;
   padding: 0.45rem 0.2rem;
   border-bottom: 1px solid var(--line);
+}
+
+.insight-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.7rem;
+}
+
+.insight {
+  display: grid;
+  gap: 0.25rem;
+  padding: 0.8rem;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.14);
+}
+
+.insight span,
+.insight small {
+  color: var(--muted);
+}
+
+.insight span {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.insight strong {
+  font-size: 1rem;
+}
+
+.insight small {
+  font-size: 0.82rem;
 }
 
 .manager-grid {
@@ -590,6 +665,10 @@ tbody tr:hover {
   .grid-2 {
     grid-template-columns: 1fr 1fr;
   }
+
+  .insight-grid {
+    grid-template-columns: 1fr 1fr;
+  }
 }
 
 @media (max-width: 860px) {
@@ -630,6 +709,14 @@ tbody tr:hover {
   .kpi-3,
   .grid-2 {
     grid-template-columns: 1fr;
+  }
+
+  .insight-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .panel-actions {
+    width: 100%;
   }
 
   .rank-list li {
