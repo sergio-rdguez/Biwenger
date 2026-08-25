@@ -41,9 +41,17 @@ LEAGUE_DETAIL_URL = (
 ROUNDS_URL = "https://biwenger.as.com/api/v2/rounds/league"
 BOARD_URL = "https://biwenger.as.com/api/v2/league/{league_id}/board"
 
-from biwenger_feed import enrich_league_feed
+from biwenger_feed import (
+    active_season_round,
+    enrich_league_feed,
+    fetch_competition_meta,
+    lineup_gameweek_points,
+    pending_postponed_rounds,
+    season_round_ids,
+)
 
 DEFAULT_POT = {"8": 0.5, "9": 1.0, "10": 1.5, "11": 2.0, "12": 2.5}
+
 HEADERS_BASE = {
     "Content-Type": "application/json",
     "Accept": "application/json, text/plain, */*",
@@ -165,8 +173,11 @@ def extract_jornada_number(round_obj: dict) -> int | None:
     return None
 
 
-def board_rounds(board: list[dict]) -> dict[int, dict]:
-    """round_id -> metadata and final results."""
+def board_rounds(board: list[dict], allowed_ids: set[int] | None = None) -> dict[int, dict]:
+    """round_id -> metadata and final results.
+
+    If allowed_ids is set, ignore board events from other seasons.
+    """
     by_id: dict[int, dict] = {}
     for event in board:
         content = event.get("content")
@@ -180,6 +191,11 @@ def board_rounds(board: list[dict]) -> dict[int, dict]:
         if rid is None or num is None:
             continue
         rid = int(rid)
+        if allowed_ids is not None and rid not in allowed_ids:
+            continue
+        # Skip postponed parts as separate jornada numbers (e.g. J1 aplazada)
+        if round_obj.get("part"):
+            continue
         entry = by_id.setdefault(
             rid,
             {
@@ -305,9 +321,19 @@ def sync(dry_run: bool = False) -> dict:
     league_data = session.get(LEAGUE_DETAIL_URL, timeout=30).json().get("data") or {}
     rounds_data = session.get(ROUNDS_URL, timeout=30).json().get("data") or {}
     board = fetch_board(session, int(league["id"]))
-    rounds_by_id = board_rounds(board)
+    competition = fetch_competition_meta(session)
+    season_rounds = competition.get("season_rounds") or []
+    catalog_players = competition.get("players") or {}
+    allowed_round_ids = season_round_ids(season_rounds) or None
+    rounds_by_id = board_rounds(board, allowed_ids=allowed_round_ids)
     finished_nums = {r["number"] for r in rounds_by_id.values() if r["finished"]}
     print(f"Jornadas finalizadas: {sorted(finished_nums) or 'ninguna'}")
+    postponed = pending_postponed_rounds(season_rounds)
+    if postponed:
+        print(
+            "Pendientes de finalizar (aplazadas): "
+            + ", ".join(p["name"] for p in postponed)
+        )
 
     standings = league_data.get("standings") or []
     live_standings = (rounds_data.get("league") or {}).get("standings") or []
@@ -315,10 +341,15 @@ def sync(dry_run: bool = False) -> dict:
     current_round_id = (rounds_data.get("round") or {}).get("id")
     current_round_id = int(current_round_id) if current_round_id is not None else None
 
-    # Jornada en curso según round id (p.ej. 4900 = Jornada 2)
+    active = active_season_round(season_rounds)
+    # Jornada en curso: preferir round activo del catálogo / live id
     if current_round_id and current_round_id in rounds_by_id:
         current_jornada = rounds_by_id[current_round_id]["number"]
         current_finished = rounds_by_id[current_round_id]["finished"]
+    elif active and extract_jornada_number(active):
+        current_jornada = extract_jornada_number(active)
+        current_round_id = int(active["id"]) if active.get("id") is not None else None
+        current_finished = False
     elif finished_nums:
         current_jornada = max(finished_nums) + 1
         current_finished = False
@@ -443,12 +474,12 @@ def sync(dry_run: bool = False) -> dict:
 
     classification.sort(key=lambda x: (x["position"] is None, x["position"] or 999))
 
-    # 3) Jornada en curso (provisional): ranking live de /rounds/league
+    # 3) Jornada en curso: puntos de once (fitness) > ranking live Biwenger.
+    # /rounds/league a veces sigue mostrando puntos de la jornada anterior (espejo).
     if not current_finished and live_standings:
-        # Si todos los puntos coinciden con la jornada final anterior,
-        # Biwenger aún no ha empezado a puntuar: marcar prematch (sin bote).
         prev_j = current_jornada - 1
         live_rows = []
+        gw_rows = []
         for row in live_standings:
             remote_name = (row.get("name") or "").strip()
             web_name = normalize_name(remote_name, aliases)
@@ -461,20 +492,23 @@ def sync(dry_run: bool = False) -> dict:
                 continue
             pts = int(row["points"]) if row.get("points") is not None else None
             live_rows.append((web_name, int(pos), pts))
+            lineup = row.get("lineup") if isinstance(row.get("lineup"), dict) else {}
+            gw = lineup_gameweek_points(lineup, catalog_players)
+            if gw is not None:
+                gw_rows.append((web_name, gw))
 
-        status = (
-            "prematch"
-            if is_mirrored_prematch(live_rows, by_name, prev_j, finished_nums)
-            else "provisional"
-        )
-        if status == "prematch":
-            live_status = "prematch"
+        mirrored = is_mirrored_prematch(live_rows, by_name, prev_j, finished_nums)
+        has_gw_scores = len(gw_rows) > 0 and any(pts != 0 for _, pts in gw_rows)
+
+        if has_gw_scores:
+            status = "provisional"
+            live_status = "provisional"
+            ranked = sorted(gw_rows, key=lambda x: (-x[1], x[0].lower()))
             print(
-                f"Jornada {current_jornada}: prematch (sin puntos nuevos aún; no suma al bote)"
+                f"Jornada {current_jornada}: provisional por puntos de once "
+                f"({len(ranked)} managers)"
             )
-
-        if status == "provisional":
-            for web_name, pos, pts in live_rows:
+            for pos, (web_name, pts) in enumerate(ranked, start=1):
                 player = by_name.setdefault(
                     web_name, {"name": web_name, "positions": {}, "rounds": {}}
                 )
@@ -483,6 +517,26 @@ def sync(dry_run: bool = False) -> dict:
                     current_jornada,
                     pos,
                     status,
+                    pts,
+                    round_id=current_round_id,
+                    points_source="lineup_fitness",
+                )
+        elif mirrored:
+            live_status = "prematch"
+            print(
+                f"Jornada {current_jornada}: prematch (sin puntos nuevos aún; no suma al bote)"
+            )
+        else:
+            live_status = "provisional"
+            for web_name, pos, pts in live_rows:
+                player = by_name.setdefault(
+                    web_name, {"name": web_name, "positions": {}, "rounds": {}}
+                )
+                set_round(
+                    player,
+                    current_jornada,
+                    pos,
+                    "provisional",
                     pts,
                     round_id=current_round_id,
                 )
@@ -527,6 +581,8 @@ def sync(dry_run: bool = False) -> dict:
         live_standings=live_standings,
         board=board,
         accept_all_new=accept_all_new,
+        catalog=catalog_players,
+        teams=competition.get("teams") or {},
     )
 
     # Reordenar tras enriquecer
@@ -558,6 +614,23 @@ def sync(dry_run: bool = False) -> dict:
         },
         "fixtures": feed.get("fixtures") or [],
         "players_index": feed.get("players_index") or {},
+        "postponed_rounds": postponed,
+        "competition_rounds": [
+            {
+                "id": r.get("id"),
+                "name": r.get("name"),
+                "short": r.get("short"),
+                "status": r.get("status"),
+                "part": r.get("part"),
+            }
+            for r in season_rounds
+            if r.get("status") in ("finished", "active")
+            or r.get("part")
+            or (
+                extract_jornada_number(r) is not None
+                and extract_jornada_number(r) <= (current_jornada or 1) + 1
+            )
+        ],
         "updated_at": datetime.now(timezone.utc).isoformat(),
         "source": "biwenger-sync",
         "biwenger_league_id": league.get("id"),

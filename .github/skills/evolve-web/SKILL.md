@@ -20,15 +20,19 @@ description: >-
 `resumen` · `clasificacion` · `jornada` · `mercado` · `movimientos` · `bote` · `historico` · `managers` · `reglas`
 
 - **jornada**: ranking + fixtures + once con puntos por jugador (jornada actual)
-- **mercado**: ventas abiertas + valor de plantillas
-- **movimientos**: clausulazos, fichajes de mercado, subidas de cláusula
+- **mercado**: ventas abiertas + valor de plantillas, **filtros por columna** (checkboxes + buscar)
+- **movimientos**: clausulazos, fichajes, cláusulas + filtros (sección, tipo, manager, equipo, jugador)
 - **managers**: ficha + preview de plantilla/cláusulas
 
 Al añadir pestaña: botón `.nav-item`, `<section class="tab" id="tab-…">`, entrada en `TITLES`, render en `applyData`.
 
 ## Datos extra en `liga.json`
 
-`market` · `activity` · `fixtures` · `players_index` · `players[].lineup` · `players[].roster`
+`market` · `activity` · `fixtures` · `players_index` · `players[].lineup` · `players[].roster` · `postponed_rounds`
+
+## Siguiente evolutivo (pendiente)
+
+Consultar el **once alineado por manager en cada jornada** (histórico), no solo la jornada activa. Requiere guardar `lineups` por `round` desde `user/{id}` o el tablón al cerrar cada jornada.
 
 ## Datos / cálculo
 

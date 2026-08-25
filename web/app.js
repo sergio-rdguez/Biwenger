@@ -238,6 +238,14 @@ function renderResumen(data) {
   badge.textContent = statusLabel(status);
   badge.className = `badge ${status}`;
   renderJornadaInto(data, j, "resumenJornada");
+  const postponed = (data.postponed_rounds || []).map((p) => p.name).filter(Boolean);
+  if (postponed.length) {
+    const host = document.getElementById("resumenJornada");
+    host.insertAdjacentHTML(
+      "beforeend",
+      `<p class="hint">Pendiente de cerrar del todo: ${escapeHtml(postponed.join(", "))}.</p>`
+    );
+  }
 
   const mostValuable = data.playersByValue[0];
   const bestEfficiency = [...data.players].sort(
@@ -462,9 +470,15 @@ function renderJornadaTab(data) {
     const status = roundStatus(data, j);
     const meta = data.rounds_meta?.[String(j)] || {};
     document.getElementById("jornadaHeading").textContent = `Jornada ${j}`;
+    const postponed = (data.postponed_rounds || [])
+      .filter((p) => String(p.short || "").replace(/\D/g, "") === String(j))
+      .map((p) => p.name);
+    const postponeNote = postponed.length
+      ? ` Atención: pendiente ${postponed.join(", ")}.`
+      : "";
     const xiNote =
       j === data.current_jornada
-        ? " Debajo de cada manager: once y puntos por jugador (última puntuación Biwenger)."
+        ? " Debajo de cada manager: once y puntos por jugador."
         : "";
     document.getElementById("jornadaHint").textContent =
       (status === "final"
@@ -475,7 +489,8 @@ function renderJornadaTab(data) {
           ? `Jornada abierta${
               meta.started_at ? ` · ${formatEpoch(meta.started_at)}` : ""
             }, pero aún no hay puntos nuevos. No suma al bote.`
-          : "Resultado provisional: puntos y posiciones se actualizan mientras se juega.") +
+          : "Resultado provisional: puntos del once (última puntuación Biwenger) y ranking estimado.") +
+      postponeNote +
       xiNote;
     renderFixtures(data, "jornadaFixtures");
     renderJornadaInto(data, j, "jornadaList", { expandable: true });
@@ -484,16 +499,159 @@ function renderJornadaTab(data) {
   paint();
 }
 
-function renderMercado(data, query = "") {
+/** Filtros por columna estilo hoja de cálculo */
+const filterState = {
+  sales: {},
+  value: {},
+  mov: {},
+};
+
+function blankLabel(v) {
+  if (v == null || v === "") return "(vacío)";
+  return String(v);
+}
+
+function columnValues(rows, key, format) {
+  const set = new Set();
+  for (const row of rows) {
+    set.add(blankLabel(format ? format(row[key], row) : row[key]));
+  }
+  return [...set].sort((a, b) => a.localeCompare(b, "es", { numeric: true }));
+}
+
+function activeFilterCount(state) {
+  return Object.values(state).filter((s) => s && s.size).length;
+}
+
+function rowPassesFilters(row, state, columns) {
+  for (const col of columns) {
+    const selected = state[col.key];
+    if (!selected || !selected.size) continue;
+    const label = blankLabel(col.format ? col.format(row[col.key], row) : row[col.key]);
+    if (!selected.has(label)) return false;
+  }
+  return true;
+}
+
+function closeAllFilterMenus(except) {
+  document.querySelectorAll(".col-filter.open").forEach((el) => {
+    if (el !== except) el.classList.remove("open");
+  });
+}
+
+function bindColumnFilters(headId, columns, rows, stateKey, onApply) {
+  const head = document.getElementById(headId);
+  const state = filterState[stateKey];
+  head.innerHTML = columns
+    .map((col) => {
+      const values = columnValues(rows, col.key, col.format);
+      const selected = state[col.key];
+      const active = selected && selected.size && selected.size < values.length;
+      const options = values
+        .map((v) => {
+          const checked = !selected || !selected.size || selected.has(v);
+          return `<label class="col-filter-option"><input type="checkbox" data-col="${escapeHtml(
+            col.key
+          )}" value="${escapeHtml(v)}" ${checked ? "checked" : ""}/><span>${escapeHtml(
+            v
+          )}</span></label>`;
+        })
+        .join("");
+      return `<th class="col-filter-th">
+        <button type="button" class="col-filter-btn ${active ? "active" : ""}" data-col="${escapeHtml(
+          col.key
+        )}" aria-haspopup="true">
+          <span>${escapeHtml(col.label)}</span>
+          <span class="col-filter-icon" aria-hidden="true">▾</span>
+        </button>
+        <div class="col-filter" data-menu="${escapeHtml(col.key)}" hidden>
+          <input type="search" class="col-filter-search" placeholder="Buscar…" />
+          <div class="col-filter-actions">
+            <button type="button" data-act="all">Todos</button>
+            <button type="button" data-act="none">Ninguno</button>
+          </div>
+          <div class="col-filter-list">${options}</div>
+          <div class="col-filter-footer">
+            <button type="button" class="btn-secondary" data-act="apply">Aplicar</button>
+          </div>
+        </div>
+      </th>`;
+    })
+    .join("");
+
+  head.querySelectorAll(".col-filter-btn").forEach((btn) => {
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const menu = btn.parentElement.querySelector(".col-filter");
+      const opening = menu.hasAttribute("hidden");
+      closeAllFilterMenus();
+      document.querySelectorAll(".col-filter").forEach((m) => m.setAttribute("hidden", ""));
+      if (opening) {
+        menu.removeAttribute("hidden");
+        menu.classList.add("open");
+        btn.parentElement.classList.add("open");
+      } else {
+        btn.parentElement.classList.remove("open");
+      }
+    });
+  });
+
+  head.querySelectorAll(".col-filter").forEach((menu) => {
+    menu.addEventListener("click", (e) => e.stopPropagation());
+    const col = menu.dataset.menu;
+    const list = menu.querySelector(".col-filter-list");
+    menu.querySelector(".col-filter-search").addEventListener("input", (e) => {
+      const q = e.target.value.trim().toLowerCase();
+      list.querySelectorAll(".col-filter-option").forEach((lab) => {
+        lab.hidden = q && !lab.textContent.toLowerCase().includes(q);
+      });
+    });
+    menu.querySelector('[data-act="all"]').addEventListener("click", () => {
+      list.querySelectorAll("input[type=checkbox]").forEach((c) => {
+        if (!c.closest("label").hidden) c.checked = true;
+      });
+    });
+    menu.querySelector('[data-act="none"]').addEventListener("click", () => {
+      list.querySelectorAll("input[type=checkbox]").forEach((c) => {
+        if (!c.closest("label").hidden) c.checked = false;
+      });
+    });
+    menu.querySelector('[data-act="apply"]').addEventListener("click", () => {
+      const boxes = [...list.querySelectorAll("input[type=checkbox]")];
+      const checked = boxes.filter((c) => c.checked).map((c) => c.value);
+      if (!checked.length || checked.length === boxes.length) {
+        delete state[col];
+      } else {
+        state[col] = new Set(checked);
+      }
+      menu.setAttribute("hidden", "");
+      menu.classList.remove("open");
+      menu.parentElement.classList.remove("open");
+      onApply();
+    });
+  });
+}
+
+function renderMercado(data) {
   const averageValue = data.players.length ? data.totalTeamValue / data.players.length : 0;
   const highest = data.playersByValue[0];
-  const bestEfficiency = [...data.players].sort(
-    (a, b) => b.pointsPerMillion - a.pointsPerMillion
-  )[0];
-  const sales = data.market?.sales || [];
-  const openSales = sales.length;
+  const sales = (data.market?.sales || []).map((s) => ({
+    ...s,
+    player: s.player || `#${s.player_id}`,
+    seller: s.seller || "Agencia",
+    team: s.team || "—",
+    position_label: s.position_label || "—",
+    points_last: s.points_last ?? "—",
+    price_label: moneyM(s.price),
+    until_label: formatEpoch(s.until),
+  }));
+
+  const filteredSales = sales.filter((row) =>
+    rowPassesFilters(row, filterState.sales, SALES_COLS)
+  );
+
   document.getElementById("mercadoKpis").innerHTML = `
-    <div class="kpi"><span>Ventas abiertas</span><strong>${openSales}</strong></div>
+    <div class="kpi"><span>Ventas (filtro)</span><strong>${filteredSales.length}/${sales.length}</strong></div>
     <div class="kpi"><span>Valor total liga</span><strong>${moneyM(data.totalTeamValue)}</strong></div>
     <div class="kpi"><span>Media por plantilla</span><strong>${moneyM(averageValue)}</strong></div>
     <div class="kpi"><span>Variación diaria</span><strong class="${
@@ -501,54 +659,161 @@ function renderMercado(data, query = "") {
     }">${data.totalDailyChange > 0 ? "+" : ""}${moneyM(data.totalDailyChange)}</strong></div>
   `;
 
-  const q = query.trim().toLowerCase();
-  const filtered = sales.filter((s) => {
-    if (!q) return true;
-    const hay = `${s.player || ""} ${s.seller || ""} ${s.team || ""}`.toLowerCase();
-    return hay.includes(q);
-  });
-  const salesBody = document.getElementById("salesBody");
-  if (!filtered.length) {
-    salesBody.innerHTML = `<tr><td colspan="7" class="muted">${
-      sales.length ? "Sin coincidencias." : "Sin ventas abiertas (o aún no sincronizado)."
-    }</td></tr>`;
-  } else {
-    salesBody.innerHTML = filtered
-      .slice()
-      .sort((a, b) => (a.until || 0) - (b.until || 0))
-      .map(
-        (s) => `<tr>
-          <td class="name-cell">${escapeHtml(s.player || `#${s.player_id}`)}</td>
-          <td>${escapeHtml(s.position_label || "—")}</td>
-          <td>${escapeHtml(s.team || "—")}</td>
-          <td>${moneyM(s.price)}</td>
-          <td>${s.points_last ?? "—"}</td>
-          <td>${escapeHtml(s.seller || "Agencia")}</td>
-          <td>${formatEpoch(s.until)}</td>
-        </tr>`
-      )
-      .join("");
-  }
+  const paintSales = () => {
+    const rows = sales.filter((row) => rowPassesFilters(row, filterState.sales, SALES_COLS));
+    bindColumnFilters("salesHead", SALES_COLS, sales, "sales", paintSales);
+    const clearBtn = document.getElementById("clearSalesFilters");
+    clearBtn.hidden = !activeFilterCount(filterState.sales);
+    const body = document.getElementById("salesBody");
+    if (!rows.length) {
+      body.innerHTML = `<tr><td colspan="${SALES_COLS.length}" class="muted">${
+        sales.length ? "Sin coincidencias con los filtros." : "Sin ventas abiertas."
+      }</td></tr>`;
+    } else {
+      body.innerHTML = rows
+        .slice()
+        .sort((a, b) => (a.until || 0) - (b.until || 0))
+        .map(
+          (s) => `<tr>
+            <td class="name-cell">${escapeHtml(s.player)}</td>
+            <td>${escapeHtml(s.position_label)}</td>
+            <td>${escapeHtml(s.team)}</td>
+            <td>${escapeHtml(s.price_label)}</td>
+            <td>${escapeHtml(String(s.points_last))}</td>
+            <td>${escapeHtml(s.seller)}</td>
+            <td>${escapeHtml(s.until_label)}</td>
+          </tr>`
+        )
+        .join("");
+    }
+    document.getElementById("mercadoKpis").querySelector(".kpi strong").textContent =
+      `${rows.length}/${sales.length}`;
+  };
+  paintSales();
 
-  document.getElementById("mercadoBody").innerHTML = data.playersByValue
-    .map((p, index) => {
-      const daily = Number(p.team_value_inc) || 0;
-      return `<tr>
-        <td>${index + 1}</td>
-        <td class="name-cell">${escapeHtml(p.name)}${
-          p.name === highest?.name ? ' <span class="tag">Top valor</span>' : ""
-        }</td>
-        <td>${moneyM(p.team_value)}</td>
-        <td class="${daily >= 0 ? "pos-up" : "pos-down"}">${
-          daily > 0 ? "+" : ""
-        }${moneyM(daily)}</td>
-        <td>${p.pointsPerMillion.toFixed(2)}</td>
-        <td>${p.team_size ?? "—"}</td>
-        <td>${escapeHtml(p.formation || "—")}</td>
-        <td>${formatEpoch(p.last_access)}</td>
-      </tr>`;
-    })
-    .join("");
+  const valueRows = data.playersByValue.map((p, index) => {
+    const daily = Number(p.team_value_inc) || 0;
+    return {
+      rank: String(index + 1),
+      name: p.name,
+      value_label: moneyM(p.team_value),
+      daily_label: `${daily > 0 ? "+" : ""}${moneyM(daily)}`,
+      ppm: p.pointsPerMillion.toFixed(2),
+      team_size: String(p.team_size ?? "—"),
+      formation: p.formation || "—",
+      last_access: formatEpoch(p.last_access),
+      _raw: p,
+      _daily: daily,
+      _top: p.name === highest?.name,
+    };
+  });
+
+  const paintValue = () => {
+    const rows = valueRows.filter((row) => rowPassesFilters(row, filterState.value, VALUE_COLS));
+    bindColumnFilters("valueHead", VALUE_COLS, valueRows, "value", paintValue);
+    document.getElementById("clearValueFilters").hidden = !activeFilterCount(filterState.value);
+    document.getElementById("mercadoBody").innerHTML = rows.length
+      ? rows
+          .map(
+            (p) => `<tr>
+              <td>${escapeHtml(p.rank)}</td>
+              <td class="name-cell">${escapeHtml(p.name)}${
+                p._top ? ' <span class="tag">Top valor</span>' : ""
+              }</td>
+              <td>${escapeHtml(p.value_label)}</td>
+              <td class="${p._daily >= 0 ? "pos-up" : "pos-down"}">${escapeHtml(p.daily_label)}</td>
+              <td>${escapeHtml(p.ppm)}</td>
+              <td>${escapeHtml(p.team_size)}</td>
+              <td>${escapeHtml(p.formation)}</td>
+              <td>${escapeHtml(p.last_access)}</td>
+            </tr>`
+          )
+          .join("")
+      : `<tr><td colspan="${VALUE_COLS.length}" class="muted">Sin coincidencias.</td></tr>`;
+  };
+  paintValue();
+}
+
+const SALES_COLS = [
+  { key: "player", label: "Jugador" },
+  { key: "position_label", label: "Pos" },
+  { key: "team", label: "Equipo" },
+  { key: "price_label", label: "Precio" },
+  { key: "points_last", label: "Últ pts" },
+  { key: "seller", label: "Vendedor" },
+  { key: "until_label", label: "Cierra" },
+];
+
+const VALUE_COLS = [
+  { key: "rank", label: "# valor" },
+  { key: "name", label: "Manager" },
+  { key: "value_label", label: "Valor" },
+  { key: "daily_label", label: "± día" },
+  { key: "ppm", label: "Pts / M€" },
+  { key: "team_size", label: "Jugadores" },
+  { key: "formation", label: "Formación" },
+  { key: "last_access", label: "Último acceso" },
+];
+
+const MOV_FILTERS = [
+  { key: "section", label: "Sección" },
+  { key: "kind", label: "Tipo" },
+  { key: "manager", label: "Manager" },
+  { key: "team", label: "Equipo" },
+  { key: "player", label: "Jugador" },
+];
+
+function normalizeMovements(data) {
+  const act = data.activity || {};
+  const rows = [];
+  for (const t of act.transfers || []) {
+    rows.push({
+      section: "Clausulazo / salida",
+      kind: t.kind || "transfer",
+      player: t.player || `#${t.player_id}`,
+      team: t.team || "—",
+      manager: t.to || t.from || "—",
+      from: t.from || "—",
+      to: t.to || "—",
+      amount: t.amount,
+      date: t.date,
+      _type: "transfer",
+      _raw: t,
+    });
+  }
+  for (const c of act.clause_increments || []) {
+    rows.push({
+      section: "Subida cláusula",
+      kind: "clause",
+      player: c.player || `#${c.player_id}`,
+      team: c.team || "—",
+      manager: c.manager || "—",
+      from: c.manager || "—",
+      to: "—",
+      amount: c.amount,
+      date: c.date,
+      release_clause: c.release_clause,
+      _type: "clause",
+      _raw: c,
+    });
+  }
+  for (const d of act.market_deals || []) {
+    rows.push({
+      section: "Fichaje mercado",
+      kind: "market",
+      player: d.player || `#${d.player_id}`,
+      team: d.team || "—",
+      manager: d.to || d.from || "—",
+      from: d.from || "—",
+      to: d.to || "—",
+      amount: d.amount,
+      date: d.date,
+      bids: d.bids,
+      _type: "market",
+      _raw: d,
+    });
+  }
+  return rows;
 }
 
 function feedItem(html) {
@@ -556,66 +821,161 @@ function feedItem(html) {
 }
 
 function renderMovimientos(data) {
-  const act = data.activity || {};
-  const transfers = act.transfers || [];
-  const clauses = act.clause_increments || [];
-  const deals = act.market_deals || [];
+  const all = normalizeMovements(data);
 
-  document.getElementById("movTransfers").innerHTML = transfers.length
-    ? transfers
-        .map((t) => {
-          const who = t.to
-            ? `${escapeHtml(t.from || "?")} → ${escapeHtml(t.to)}`
-            : `Sale de ${escapeHtml(t.from || "?")}`;
-          return feedItem(`
-            <div class="feed-top">
-              <strong>${escapeHtml(t.player || `#${t.player_id}`)}</strong>
-              <span class="tag">${escapeHtml(t.kind || "transfer")}</span>
-            </div>
-            <div class="feed-meta">${who} · ${moneyM(t.amount)}</div>
-            <div class="feed-sub">${escapeHtml(t.team || "")} · ${formatEpoch(t.date)}</div>
-          `);
+  const paintBar = () => {
+    const bar = document.getElementById("movFilterBar");
+    bar.innerHTML = MOV_FILTERS.map((f) => {
+      const values = columnValues(all, f.key);
+      const selected = filterState.mov[f.key];
+      const active = selected && selected.size && selected.size < values.length;
+      const options = values
+        .map((v) => {
+          const checked = !selected || !selected.size || selected.has(v);
+          return `<label class="col-filter-option"><input type="checkbox" value="${escapeHtml(
+            v
+          )}" ${checked ? "checked" : ""}/><span>${escapeHtml(v)}</span></label>`;
         })
-        .join("")
-    : `<p class="hint">Sin clausulazos recientes.</p>`;
+        .join("");
+      return `<div class="mov-filter ${active ? "active" : ""}" data-key="${escapeHtml(f.key)}">
+        <button type="button" class="col-filter-btn ${active ? "active" : ""}">
+          <span>${escapeHtml(f.label)}</span>
+          <span class="col-filter-icon">▾</span>
+        </button>
+        <div class="col-filter" hidden>
+          <input type="search" class="col-filter-search" placeholder="Buscar…" />
+          <div class="col-filter-actions">
+            <button type="button" data-act="all">Todos</button>
+            <button type="button" data-act="none">Ninguno</button>
+          </div>
+          <div class="col-filter-list">${options}</div>
+          <div class="col-filter-footer">
+            <button type="button" class="btn-secondary" data-act="apply">Aplicar</button>
+          </div>
+        </div>
+      </div>`;
+    }).join("");
 
-  document.getElementById("movClauses").innerHTML = clauses.length
-    ? clauses
-        .map((c) =>
-          feedItem(`
-            <div class="feed-top">
-              <strong>${escapeHtml(c.player || `#${c.player_id}`)}</strong>
-              <span class="muted">${escapeHtml(c.manager || "—")}</span>
-            </div>
-            <div class="feed-meta">+${moneyM(c.amount)}${
-              c.release_clause != null ? ` · cláusula ${moneyM(c.release_clause)}` : ""
-            }</div>
-            <div class="feed-sub">${formatEpoch(c.date)}</div>
-          `)
-        )
-        .join("")
-    : `<p class="hint">Sin subidas recientes.</p>`;
+    bar.querySelectorAll(".mov-filter").forEach((wrap) => {
+      const key = wrap.dataset.key;
+      const btn = wrap.querySelector(".col-filter-btn");
+      const menu = wrap.querySelector(".col-filter");
+      const list = wrap.querySelector(".col-filter-list");
+      btn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const opening = menu.hasAttribute("hidden");
+        document.querySelectorAll(".col-filter").forEach((m) => {
+          m.setAttribute("hidden", "");
+          m.classList.remove("open");
+        });
+        document.querySelectorAll(".col-filter-th.open, .mov-filter.open").forEach((el) => {
+          el.classList.remove("open");
+        });
+        if (opening) {
+          menu.removeAttribute("hidden");
+          menu.classList.add("open");
+          wrap.classList.add("open");
+        }
+      });
+      menu.addEventListener("click", (e) => e.stopPropagation());
+      menu.querySelector(".col-filter-search").addEventListener("input", (e) => {
+        const q = e.target.value.trim().toLowerCase();
+        list.querySelectorAll(".col-filter-option").forEach((lab) => {
+          lab.hidden = q && !lab.textContent.toLowerCase().includes(q);
+        });
+      });
+      menu.querySelector('[data-act="all"]').addEventListener("click", () => {
+        list.querySelectorAll("input").forEach((c) => {
+          if (!c.closest("label").hidden) c.checked = true;
+        });
+      });
+      menu.querySelector('[data-act="none"]').addEventListener("click", () => {
+        list.querySelectorAll("input").forEach((c) => {
+          if (!c.closest("label").hidden) c.checked = false;
+        });
+      });
+      menu.querySelector('[data-act="apply"]').addEventListener("click", () => {
+        const boxes = [...list.querySelectorAll("input")];
+        const checked = boxes.filter((c) => c.checked).map((c) => c.value);
+        if (!checked.length || checked.length === boxes.length) delete filterState.mov[key];
+        else filterState.mov[key] = new Set(checked);
+        paint();
+      });
+    });
+  };
 
-  document.getElementById("movMarket").innerHTML = deals.length
-    ? deals
-        .map((d) => {
-          const bids = (d.bids || [])
-            .slice(0, 3)
-            .map((b) => `${escapeHtml(b.manager || "?")} ${moneyM(b.amount)}`)
-            .join(" · ");
-          return feedItem(`
-            <div class="feed-top">
-              <strong>${escapeHtml(d.player || `#${d.player_id}`)}</strong>
-              <span class="muted">→ ${escapeHtml(d.to || "—")}</span>
-            </div>
-            <div class="feed-meta">${moneyM(d.amount)}${
-              d.from ? ` · de ${escapeHtml(d.from)}` : ""
-            }</div>
-            <div class="feed-sub">${formatEpoch(d.date)}${bids ? ` · ${bids}` : ""}</div>
-          `);
-        })
-        .join("")
-    : `<p class="hint">Sin fichajes de mercado recientes.</p>`;
+  const paint = () => {
+    paintBar();
+    document.getElementById("clearMovFilters").hidden = !activeFilterCount(filterState.mov);
+    const rows = all.filter((row) => rowPassesFilters(row, filterState.mov, MOV_FILTERS));
+    const transfers = rows.filter((r) => r._type === "transfer");
+    const clauses = rows.filter((r) => r._type === "clause");
+    const deals = rows.filter((r) => r._type === "market");
+
+    document.getElementById("movTransfersCount").textContent = String(transfers.length);
+    document.getElementById("movClausesCount").textContent = String(clauses.length);
+    document.getElementById("movMarketCount").textContent = String(deals.length);
+
+    document.getElementById("movTransfers").innerHTML = transfers.length
+      ? transfers
+          .map((t) => {
+            const who = t.to !== "—"
+              ? `${escapeHtml(t.from)} → ${escapeHtml(t.to)}`
+              : `Sale de ${escapeHtml(t.from)}`;
+            return feedItem(`
+              <div class="feed-top">
+                <strong>${escapeHtml(t.player)}</strong>
+                <span class="tag">${escapeHtml(t.kind)}</span>
+              </div>
+              <div class="feed-meta">${who} · ${moneyM(t.amount)}</div>
+              <div class="feed-sub">${escapeHtml(t.team)} · ${formatEpoch(t.date)}</div>
+            `);
+          })
+          .join("")
+      : `<p class="hint">Sin resultados.</p>`;
+
+    document.getElementById("movClauses").innerHTML = clauses.length
+      ? clauses
+          .map((c) =>
+            feedItem(`
+              <div class="feed-top">
+                <strong>${escapeHtml(c.player)}</strong>
+                <span class="muted">${escapeHtml(c.manager)}</span>
+              </div>
+              <div class="feed-meta">+${moneyM(c.amount)}${
+                c.release_clause != null ? ` · cláusula ${moneyM(c.release_clause)}` : ""
+              }</div>
+              <div class="feed-sub">${escapeHtml(c.team)} · ${formatEpoch(c.date)}</div>
+            `)
+          )
+          .join("")
+      : `<p class="hint">Sin resultados.</p>`;
+
+    document.getElementById("movMarket").innerHTML = deals.length
+      ? deals
+          .map((d) => {
+            const bids = (d.bids || [])
+              .slice(0, 3)
+              .map((b) => `${escapeHtml(b.manager || "?")} ${moneyM(b.amount)}`)
+              .join(" · ");
+            return feedItem(`
+              <div class="feed-top">
+                <strong>${escapeHtml(d.player)}</strong>
+                <span class="muted">→ ${escapeHtml(d.to)}</span>
+              </div>
+              <div class="feed-meta">${moneyM(d.amount)}${
+                d.from !== "—" ? ` · de ${escapeHtml(d.from)}` : ""
+              }</div>
+              <div class="feed-sub">${escapeHtml(d.team)} · ${formatEpoch(d.date)}${
+                bids ? ` · ${bids}` : ""
+              }</div>
+            `);
+          })
+          .join("")
+      : `<p class="hint">Sin resultados.</p>`;
+  };
+
+  paint();
 }
 
 function renderBote(data, query = "") {
@@ -902,7 +1262,7 @@ function applyData(raw) {
   renderResumen(data);
   renderClasificacion(data);
   renderJornadaTab(data);
-  renderMercado(data, document.getElementById("searchMarket")?.value || "");
+  renderMercado(data);
   renderMovimientos(data);
   renderBote(data, document.getElementById("searchBote").value);
   renderHistorico(data);
@@ -985,11 +1345,29 @@ async function boot() {
   document.getElementById("searchManagers").addEventListener("input", (e) => {
     renderManagers(enrich(window.__ligaRaw), e.target.value);
   });
-  document.getElementById("searchMarket")?.addEventListener("input", (e) => {
-    renderMercado(enrich(window.__ligaRaw), e.target.value);
-  });
   document.getElementById("exportBote").addEventListener("click", () => {
     exportBoteCsv(enrich(window.__ligaRaw));
+  });
+  document.getElementById("clearSalesFilters")?.addEventListener("click", () => {
+    filterState.sales = {};
+    renderMercado(enrich(window.__ligaRaw));
+  });
+  document.getElementById("clearValueFilters")?.addEventListener("click", () => {
+    filterState.value = {};
+    renderMercado(enrich(window.__ligaRaw));
+  });
+  document.getElementById("clearMovFilters")?.addEventListener("click", () => {
+    filterState.mov = {};
+    renderMovimientos(enrich(window.__ligaRaw));
+  });
+  document.addEventListener("click", () => {
+    document.querySelectorAll(".col-filter").forEach((m) => {
+      m.setAttribute("hidden", "");
+      m.classList.remove("open");
+    });
+    document.querySelectorAll(".col-filter-th.open, .mov-filter.open").forEach((el) => {
+      el.classList.remove("open");
+    });
   });
 }
 

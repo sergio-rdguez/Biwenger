@@ -119,25 +119,14 @@
             <div class="panel-head">
               <div>
                 <h2>Ventas abiertas</h2>
-                <p class="hint">Jugadores en el mercado de la liga · pujas hasta la hora límite.</p>
+                <p class="hint">Filtros por columna (estilo hoja de cálculo). AND entre columnas.</p>
               </div>
-              <label class="search-wrap">
-                <span class="sr-only">Buscar jugador</span>
-                <input type="search" id="searchMarket" placeholder="Buscar jugador o vendedor…" />
-              </label>
+              <button type="button" class="btn-secondary" id="clearSalesFilters" hidden>Limpiar filtros</button>
             </div>
             <div class="table-wrap">
-              <table>
+              <table class="filter-table" id="salesTable">
                 <thead>
-                  <tr>
-                    <th>Jugador</th>
-                    <th>Pos</th>
-                    <th>Equipo</th>
-                    <th>Precio</th>
-                    <th>Últ pts</th>
-                    <th>Vendedor</th>
-                    <th>Cierra</th>
-                  </tr>
+                  <tr id="salesHead"></tr>
                 </thead>
                 <tbody id="salesBody"></tbody>
               </table>
@@ -149,20 +138,12 @@
                 <h2>Valor de plantillas</h2>
                 <p class="hint">Valor, variación diaria y rendimiento por millón invertido.</p>
               </div>
+              <button type="button" class="btn-secondary" id="clearValueFilters" hidden>Limpiar filtros</button>
             </div>
             <div class="table-wrap">
-              <table>
+              <table class="filter-table" id="valueTable">
                 <thead>
-                  <tr>
-                    <th># valor</th>
-                    <th>Manager</th>
-                    <th>Valor</th>
-                    <th>± día</th>
-                    <th>Pts / M€</th>
-                    <th>Jugadores</th>
-                    <th>Formación</th>
-                    <th>Último acceso</th>
-                  </tr>
+                  <tr id="valueHead"></tr>
                 </thead>
                 <tbody id="mercadoBody"></tbody>
               </table>
@@ -171,18 +152,28 @@
         </section>
 
         <section class="tab" id="tab-movimientos" data-title="Movimientos">
+          <article class="panel">
+            <div class="panel-head">
+              <div>
+                <h2>Filtros</h2>
+                <p class="hint">Filtra por manager, equipo, jugador, tipo de movimiento…</p>
+              </div>
+              <button type="button" class="btn-secondary" id="clearMovFilters" hidden>Limpiar filtros</button>
+            </div>
+            <div class="filter-bar" id="movFilterBar"></div>
+          </article>
           <div class="grid-2">
             <article class="panel">
-              <div class="panel-head"><h2>Clausulazos y salidas</h2></div>
+              <div class="panel-head"><h2>Clausulazos y salidas <span class="count-pill" id="movTransfersCount"></span></h2></div>
               <div id="movTransfers" class="feed-list"></div>
             </article>
             <article class="panel">
-              <div class="panel-head"><h2>Subidas de cláusula</h2></div>
+              <div class="panel-head"><h2>Subidas de cláusula <span class="count-pill" id="movClausesCount"></span></h2></div>
               <div id="movClauses" class="feed-list"></div>
             </article>
           </div>
           <article class="panel">
-            <div class="panel-head"><h2>Fichajes de mercado</h2></div>
+            <div class="panel-head"><h2>Fichajes de mercado <span class="count-pill" id="movMarketCount"></span></h2></div>
             <div id="movMarket" class="feed-list"></div>
           </article>
         </section>

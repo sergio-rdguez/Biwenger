@@ -37,8 +37,18 @@ Implementados en `sync_biwenger.py`:
 | Status | Significado | Suma al bote |
 |--------|-------------|--------------|
 | `final` | Evento `roundFinished` en tablón | Sí (oficial) |
-| `provisional` | Jornada abierta con puntos live distintos | Sí (estimado) |
-| `prematch` | Jornada abierta pero puntos = copia de la final anterior; no se crean resultados de managers | **No** |
+| `provisional` | Jornada activa con puntos de once (`fitness` del catálogo) o live distinto | Sí (estimado) |
+| `prematch` | Jornada abierta pero sin puntos de once todavía; live espeja la final anterior | **No** |
+
+Fuente de verdad de calendarios: `competitions/la-liga/data` → `season.rounds`
+(`finished` / `active` / `pending`, incl. jornadas aplazadas `part: 2`).
+
+El tablón se filtra a los `round.id` de la temporada actual (evita mezclar temporadas viejas).
+
+Si `/rounds/league` sigue mostrando puntos de la jornada anterior, el ranking provisional
+se calcula sumando el último valor de `fitness[]` de cada titular del once.
+
+`postponed_rounds` lista aplazadas pendientes (p.ej. «Jornada 1 (aplazada)»).
 
 `lastPositions[i]` ≈ puesto jornada `i+1`. El `round.id` actual se mapea a número vía `roundStarted`/`roundFinished` (`name`: "Jornada N").
 

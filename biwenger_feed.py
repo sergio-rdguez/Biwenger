@@ -28,6 +28,67 @@ def last_fitness_points(fitness: Any) -> int | None:
     return None
 
 
+def fetch_competition_meta(session: requests.Session) -> dict:
+    """Season rounds + raw catalog players (for gameweek points)."""
+    res = session.get(CATALOG_URL, timeout=60)
+    res.raise_for_status()
+    data = res.json().get("data") or {}
+    season = data.get("season") or {}
+    return {
+        "season_rounds": season.get("rounds") or [],
+        "players": data.get("players") or {},
+        "teams": {str(k): v for k, v in (data.get("teams") or {}).items()},
+    }
+
+
+def lineup_gameweek_points(lineup: dict | None, catalog_players: dict) -> int | None:
+    """Sum of last fitness points for starters. None if nobody has scored data."""
+    if not isinstance(lineup, dict):
+        return None
+    total = 0
+    scored = 0
+    for pid in lineup.get("players") or []:
+        raw = catalog_players.get(str(pid)) or {}
+        pts = last_fitness_points(raw.get("fitness"))
+        if pts is None:
+            continue
+        total += pts
+        scored += 1
+    return total if scored else None
+
+
+def active_season_round(season_rounds: list[dict]) -> dict | None:
+    for row in season_rounds:
+        if row.get("status") == "active" and not row.get("part"):
+            return row
+    return None
+
+
+def pending_postponed_rounds(season_rounds: list[dict]) -> list[dict]:
+    out = []
+    for row in season_rounds:
+        if row.get("status") == "pending" and row.get("part"):
+            out.append(
+                {
+                    "id": row.get("id"),
+                    "name": row.get("name"),
+                    "short": row.get("short"),
+                    "part": row.get("part"),
+                    "status": row.get("status"),
+                }
+            )
+    return out
+
+
+def season_round_ids(season_rounds: list[dict]) -> set[int]:
+    ids: set[int] = set()
+    for row in season_rounds:
+        rid = row.get("id")
+        if rid is not None:
+            ids.add(int(rid))
+    return ids
+
+
 def fetch_catalog(session: requests.Session) -> tuple[dict[str, dict], dict[str, dict]]:
     res = session.get(CATALOG_URL, timeout=60)
     res.raise_for_status()
@@ -300,9 +361,12 @@ def enrich_league_feed(
     live_standings: list[dict],
     board: list[dict],
     accept_all_new: bool,
+    catalog: dict[str, dict] | None = None,
+    teams: dict[str, dict] | None = None,
 ) -> dict:
     print("Descargando catálogo, mercado y plantillas…")
-    catalog, teams = fetch_catalog(session)
+    if catalog is None or teams is None:
+        catalog, teams = fetch_catalog(session)
     market = fetch_market(session)
     activity = parse_board_activity(board)
     live_by_id = {row.get("id"): row for row in live_standings}

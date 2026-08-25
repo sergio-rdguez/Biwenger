@@ -6,6 +6,7 @@ from sync_biwenger import (
     rank_results,
     set_round,
 )
+from biwenger_feed import lineup_gameweek_points
 
 
 class SyncBiwengerTests(unittest.TestCase):
@@ -25,9 +26,14 @@ class SyncBiwengerTests(unittest.TestCase):
                     "results": [{"user": {"name": "A"}, "points": 10}],
                 },
             },
+            {
+                "type": "roundStarted",
+                "date": 50,
+                "content": {"round": {"id": 4484, "name": "Jornada 1"}},
+            },
         ]
 
-        rounds = board_rounds(board)
+        rounds = board_rounds(board, allowed_ids={4899, 4900})
 
         self.assertEqual(rounds[4900]["number"], 2)
         self.assertEqual(rounds[4900]["started_at"], 100)
@@ -35,6 +41,7 @@ class SyncBiwengerTests(unittest.TestCase):
         self.assertEqual(rounds[4899]["finished_at"], 200)
         self.assertTrue(rounds[4899]["finished"])
         self.assertEqual(rounds[4899]["results"][0]["points"], 10)
+        self.assertNotIn(4484, rounds)
 
     def test_rank_results_preserves_api_order_for_ties_and_bonus(self):
         results = [
@@ -87,6 +94,16 @@ class SyncBiwengerTests(unittest.TestCase):
                 [("A", 1, 36), ("B", 2, 20)], players, 1, {1}
             )
         )
+
+    def test_lineup_gameweek_points_sums_last_fitness(self):
+        catalog = {
+            "1": {"fitness": [3, 4]},
+            "2": {"fitness": [None, 5]},
+            "3": {"fitness": []},
+        }
+        lineup = {"players": [1, 2, 3]}
+        self.assertEqual(lineup_gameweek_points(lineup, catalog), 9)
+        self.assertIsNone(lineup_gameweek_points({"players": [3]}, catalog))
 
 
 if __name__ == "__main__":
