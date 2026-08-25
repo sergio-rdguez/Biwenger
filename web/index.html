@@ -21,7 +21,8 @@
         <button type="button" class="nav-item active" data-tab="resumen">Resumen</button>
         <button type="button" class="nav-item" data-tab="clasificacion">Clasificación</button>
         <button type="button" class="nav-item" data-tab="jornada">Jornada en vivo</button>
-        <button type="button" class="nav-item" data-tab="mercado">Plantillas y mercado</button>
+        <button type="button" class="nav-item" data-tab="mercado">Mercado</button>
+        <button type="button" class="nav-item" data-tab="movimientos">Movimientos</button>
         <button type="button" class="nav-item" data-tab="bote">Bote y adeudas</button>
         <button type="button" class="nav-item" data-tab="historico">Histórico</button>
         <button type="button" class="nav-item" data-tab="managers">Managers</button>
@@ -107,12 +108,41 @@
               </label>
             </div>
             <p class="hint" id="jornadaHint"></p>
-            <ol class="rank-list" id="jornadaList"></ol>
+            <div id="jornadaFixtures" class="fixtures-row"></div>
+            <div id="jornadaList"></div>
           </article>
         </section>
 
-        <section class="tab" id="tab-mercado" data-title="Plantillas y mercado">
+        <section class="tab" id="tab-mercado" data-title="Mercado">
           <div class="kpi-grid" id="mercadoKpis"></div>
+          <article class="panel">
+            <div class="panel-head">
+              <div>
+                <h2>Ventas abiertas</h2>
+                <p class="hint">Jugadores en el mercado de la liga · pujas hasta la hora límite.</p>
+              </div>
+              <label class="search-wrap">
+                <span class="sr-only">Buscar jugador</span>
+                <input type="search" id="searchMarket" placeholder="Buscar jugador o vendedor…" />
+              </label>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Jugador</th>
+                    <th>Pos</th>
+                    <th>Equipo</th>
+                    <th>Precio</th>
+                    <th>Últ pts</th>
+                    <th>Vendedor</th>
+                    <th>Cierra</th>
+                  </tr>
+                </thead>
+                <tbody id="salesBody"></tbody>
+              </table>
+            </div>
+          </article>
           <article class="panel">
             <div class="panel-head">
               <div>
@@ -137,6 +167,23 @@
                 <tbody id="mercadoBody"></tbody>
               </table>
             </div>
+          </article>
+        </section>
+
+        <section class="tab" id="tab-movimientos" data-title="Movimientos">
+          <div class="grid-2">
+            <article class="panel">
+              <div class="panel-head"><h2>Clausulazos y salidas</h2></div>
+              <div id="movTransfers" class="feed-list"></div>
+            </article>
+            <article class="panel">
+              <div class="panel-head"><h2>Subidas de cláusula</h2></div>
+              <div id="movClauses" class="feed-list"></div>
+            </article>
+          </div>
+          <article class="panel">
+            <div class="panel-head"><h2>Fichajes de mercado</h2></div>
+            <div id="movMarket" class="feed-list"></div>
           </article>
         </section>
 

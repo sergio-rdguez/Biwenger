@@ -22,6 +22,13 @@ description: >-
 | Clasificación temporada | `GET /api/v2/league?include=all&fields=*,standings,…` |
 | Ranking jornada en curso | `GET /api/v2/rounds/league` |
 | Tablón | `GET /api/v2/league/{id}/board?offset=&limit=` |
+| Catálogo jugadores | `GET /api/v2/competitions/la-liga/data?lang=es&score=5` |
+| Mercado | `GET /api/v2/market` |
+| Detalle manager | `GET /api/v2/user/{id}?fields=name,balance,points,players(id,owner),lineups…` |
+
+Feed ampliado en `biwenger_feed.py` → `enrich_league_feed()` (mercado, actividad, fixtures, once, plantillas).
+
+Puntos de jornada por jugador ≈ último valor numérico de `fitness[]` del catálogo (`points_last` / `points_jornada`).
 
 ## Estados de jornada
 
@@ -58,10 +65,16 @@ El sync **solo** acepta managers ya en la plantilla canónica (salvo plantilla v
 season, pot_rules, previous_season
 current_jornada, current_round_status, rounds_meta
 classification[]  # puesto, pts, team_value, …
+market { sales[], offers[], viewer_balance, viewer_max_bid }
+activity { transfers[], market_deals[], clause_increments[] }
+fixtures[]  # partidos + dificultad (bettingPool)
+players_index { id: {name, team, position_label, points_last, …} }
 players[]:
   name, positions, rounds{ j: {position,status,points,bonus,round_id} }
   points, team_value, team_value_inc, team_size, formation,
-  last_access, season_position, …
+  last_access, season_position, balance, max_bid,
+  lineup { formation, starters[], bench[], points_sum },
+  roster[{ id, name, clause, in_xi, points_last, … }]
 ```
 
 ## Al evolucionar el sync

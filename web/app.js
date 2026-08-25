@@ -5,7 +5,8 @@ const TITLES = {
   resumen: "Resumen",
   clasificacion: "Clasificación",
   jornada: "Jornada en vivo",
-  mercado: "Plantillas y mercado",
+  mercado: "Mercado",
+  movimientos: "Movimientos",
   bote: "Bote y adeudas",
   historico: "Histórico",
   managers: "Managers",
@@ -308,9 +309,10 @@ function renderClasificacion(data) {
     .join("");
 }
 
-function renderJornadaInto(data, jornada, targetId) {
+function renderJornadaInto(data, jornada, targetId, { expandable = false } = {}) {
   const list = document.getElementById(targetId);
   const potRules = data.pot_rules || {};
+  const showXi = expandable && jornada === data.current_jornada;
   const rows = data.players
     .map((p) => {
       const entry = p.entries.find((e) => e.jornada === jornada);
@@ -321,6 +323,7 @@ function renderJornadaInto(data, jornada, targetId) {
         points: entry.points,
         bonus: entry.bonus,
         status: entry.status,
+        lineup: p.lineup,
       };
     })
     .filter(Boolean)
@@ -344,14 +347,90 @@ function renderJornadaInto(data, jornada, targetId) {
           : pay
             ? `Bote ${euro(fee)}`
             : "—";
-      return `<li class="${pay ? "pay" : ""}">
-        <span class="pos">${r.pos}º</span>
-        <span>${escapeHtml(r.name)}</span>
-        <span class="muted">${pts}</span>
-        <span>${prize}</span>
+      const xiSum =
+        showXi && r.lineup?.points_sum != null
+          ? ` · XI ${r.lineup.points_sum} pts`
+          : "";
+      const detail = showXi ? renderLineupDetail(r.lineup) : "";
+      return `<li class="rank-item ${pay ? "pay" : ""} ${showXi ? "expandable" : ""}">
+        <div class="rank-row">
+          <span class="pos">${r.pos}º</span>
+          <span class="rank-name">${escapeHtml(r.name)}</span>
+          <span class="muted">${pts}${xiSum}</span>
+          <span>${prize}</span>
+        </div>
+        ${detail}
       </li>`;
     })
     .join("")}</ol>`;
+}
+
+function renderLineupDetail(lineup) {
+  if (!lineup?.starters?.length) {
+    return `<div class="lineup-detail"><p class="hint">Sin once disponible.</p></div>`;
+  }
+  const starters = lineup.starters
+    .map(
+      (p) => `<tr>
+        <td><span class="pos-tag">${escapeHtml(p.position_label || "?")}</span></td>
+        <td>${escapeHtml(p.name)}</td>
+        <td class="muted">${escapeHtml(p.team || "—")}</td>
+        <td class="pts-cell">${p.points_jornada ?? p.points_last ?? "—"}</td>
+      </tr>`
+    )
+    .join("");
+  const bench = (lineup.bench || [])
+    .map(
+      (p) => `<tr class="bench-row">
+        <td><span class="pos-tag muted">${escapeHtml(p.position_label || "?")}</span></td>
+        <td>${escapeHtml(p.name)}</td>
+        <td class="muted">${escapeHtml(p.team || "—")}</td>
+        <td class="pts-cell muted">${p.points_jornada ?? p.points_last ?? "—"}</td>
+      </tr>`
+    )
+    .join("");
+  return `<div class="lineup-detail">
+    <div class="lineup-meta">
+      <span>${escapeHtml(lineup.formation || "—")}</span>
+      <strong>Suma titulares: ${lineup.points_sum ?? 0} pts</strong>
+    </div>
+    <div class="table-wrap compact">
+      <table class="lineup-table">
+        <thead><tr><th>Pos</th><th>Jugador</th><th>Equipo</th><th>Pts</th></tr></thead>
+        <tbody>${starters}${bench}</tbody>
+      </table>
+    </div>
+  </div>`;
+}
+
+function renderFixtures(data, targetId) {
+  const el = document.getElementById(targetId);
+  if (!el) return;
+  const fixtures = data.fixtures || [];
+  if (!fixtures.length) {
+    el.innerHTML = "";
+    return;
+  }
+  el.innerHTML = fixtures
+    .map((g) => {
+      const score =
+        g.home_score != null && g.away_score != null
+          ? `${g.home_score} – ${g.away_score}`
+          : "vs";
+      const diff =
+        g.home_difficulty != null || g.away_difficulty != null
+          ? `<small>Dif. ${g.home_difficulty ?? "—"} / ${g.away_difficulty ?? "—"}</small>`
+          : "";
+      return `<div class="fixture-card">
+        <span class="fixture-home">${escapeHtml(g.home || "?")}</span>
+        <span class="fixture-score">${score}</span>
+        <span class="fixture-away">${escapeHtml(g.away || "?")}</span>
+        <span class="fixture-meta">${formatEpoch(g.date)} · ${escapeHtml(
+          g.status || ""
+        )}${diff}</span>
+      </div>`;
+    })
+    .join("");
 }
 
 function renderJornadaTab(data) {
@@ -369,6 +448,7 @@ function renderJornadaTab(data) {
     document.getElementById("jornadaList").innerHTML =
       "<p class=\"hint\">Aún no hay jornadas. Importa desde Biwenger para ver el ranking provisional.</p>";
     document.getElementById("jornadaHint").textContent = "";
+    document.getElementById("jornadaFixtures").innerHTML = "";
     return;
   }
 
@@ -382,8 +462,12 @@ function renderJornadaTab(data) {
     const status = roundStatus(data, j);
     const meta = data.rounds_meta?.[String(j)] || {};
     document.getElementById("jornadaHeading").textContent = `Jornada ${j}`;
+    const xiNote =
+      j === data.current_jornada
+        ? " Debajo de cada manager: once y puntos por jugador (última puntuación Biwenger)."
+        : "";
     document.getElementById("jornadaHint").textContent =
-      status === "final"
+      (status === "final"
         ? `Resultado oficial cerrado en Biwenger${
             meta.finished_at ? ` · ${formatEpoch(meta.finished_at)}` : ""
           }.`
@@ -391,29 +475,60 @@ function renderJornadaTab(data) {
           ? `Jornada abierta${
               meta.started_at ? ` · ${formatEpoch(meta.started_at)}` : ""
             }, pero aún no hay puntos nuevos. No suma al bote.`
-          : "Resultado provisional: puntos y posiciones se actualizan mientras se juega.";
-    renderJornadaInto(data, j, "jornadaList");
+          : "Resultado provisional: puntos y posiciones se actualizan mientras se juega.") +
+      xiNote;
+    renderFixtures(data, "jornadaFixtures");
+    renderJornadaInto(data, j, "jornadaList", { expandable: true });
   };
   select.onchange = paint;
   paint();
 }
 
-function renderMercado(data) {
+function renderMercado(data, query = "") {
   const averageValue = data.players.length ? data.totalTeamValue / data.players.length : 0;
   const highest = data.playersByValue[0];
   const bestEfficiency = [...data.players].sort(
     (a, b) => b.pointsPerMillion - a.pointsPerMillion
   )[0];
+  const sales = data.market?.sales || [];
+  const openSales = sales.length;
   document.getElementById("mercadoKpis").innerHTML = `
+    <div class="kpi"><span>Ventas abiertas</span><strong>${openSales}</strong></div>
     <div class="kpi"><span>Valor total liga</span><strong>${moneyM(data.totalTeamValue)}</strong></div>
     <div class="kpi"><span>Media por plantilla</span><strong>${moneyM(averageValue)}</strong></div>
     <div class="kpi"><span>Variación diaria</span><strong class="${
       data.totalDailyChange >= 0 ? "pos-up" : "pos-down"
     }">${data.totalDailyChange > 0 ? "+" : ""}${moneyM(data.totalDailyChange)}</strong></div>
-    <div class="kpi"><span>Mejor pts/M€</span><strong>${escapeHtml(
-      bestEfficiency?.name || "—"
-    )}</strong></div>
   `;
+
+  const q = query.trim().toLowerCase();
+  const filtered = sales.filter((s) => {
+    if (!q) return true;
+    const hay = `${s.player || ""} ${s.seller || ""} ${s.team || ""}`.toLowerCase();
+    return hay.includes(q);
+  });
+  const salesBody = document.getElementById("salesBody");
+  if (!filtered.length) {
+    salesBody.innerHTML = `<tr><td colspan="7" class="muted">${
+      sales.length ? "Sin coincidencias." : "Sin ventas abiertas (o aún no sincronizado)."
+    }</td></tr>`;
+  } else {
+    salesBody.innerHTML = filtered
+      .slice()
+      .sort((a, b) => (a.until || 0) - (b.until || 0))
+      .map(
+        (s) => `<tr>
+          <td class="name-cell">${escapeHtml(s.player || `#${s.player_id}`)}</td>
+          <td>${escapeHtml(s.position_label || "—")}</td>
+          <td>${escapeHtml(s.team || "—")}</td>
+          <td>${moneyM(s.price)}</td>
+          <td>${s.points_last ?? "—"}</td>
+          <td>${escapeHtml(s.seller || "Agencia")}</td>
+          <td>${formatEpoch(s.until)}</td>
+        </tr>`
+      )
+      .join("");
+  }
 
   document.getElementById("mercadoBody").innerHTML = data.playersByValue
     .map((p, index) => {
@@ -434,6 +549,73 @@ function renderMercado(data) {
       </tr>`;
     })
     .join("");
+}
+
+function feedItem(html) {
+  return `<div class="feed-item">${html}</div>`;
+}
+
+function renderMovimientos(data) {
+  const act = data.activity || {};
+  const transfers = act.transfers || [];
+  const clauses = act.clause_increments || [];
+  const deals = act.market_deals || [];
+
+  document.getElementById("movTransfers").innerHTML = transfers.length
+    ? transfers
+        .map((t) => {
+          const who = t.to
+            ? `${escapeHtml(t.from || "?")} → ${escapeHtml(t.to)}`
+            : `Sale de ${escapeHtml(t.from || "?")}`;
+          return feedItem(`
+            <div class="feed-top">
+              <strong>${escapeHtml(t.player || `#${t.player_id}`)}</strong>
+              <span class="tag">${escapeHtml(t.kind || "transfer")}</span>
+            </div>
+            <div class="feed-meta">${who} · ${moneyM(t.amount)}</div>
+            <div class="feed-sub">${escapeHtml(t.team || "")} · ${formatEpoch(t.date)}</div>
+          `);
+        })
+        .join("")
+    : `<p class="hint">Sin clausulazos recientes.</p>`;
+
+  document.getElementById("movClauses").innerHTML = clauses.length
+    ? clauses
+        .map((c) =>
+          feedItem(`
+            <div class="feed-top">
+              <strong>${escapeHtml(c.player || `#${c.player_id}`)}</strong>
+              <span class="muted">${escapeHtml(c.manager || "—")}</span>
+            </div>
+            <div class="feed-meta">+${moneyM(c.amount)}${
+              c.release_clause != null ? ` · cláusula ${moneyM(c.release_clause)}` : ""
+            }</div>
+            <div class="feed-sub">${formatEpoch(c.date)}</div>
+          `)
+        )
+        .join("")
+    : `<p class="hint">Sin subidas recientes.</p>`;
+
+  document.getElementById("movMarket").innerHTML = deals.length
+    ? deals
+        .map((d) => {
+          const bids = (d.bids || [])
+            .slice(0, 3)
+            .map((b) => `${escapeHtml(b.manager || "?")} ${moneyM(b.amount)}`)
+            .join(" · ");
+          return feedItem(`
+            <div class="feed-top">
+              <strong>${escapeHtml(d.player || `#${d.player_id}`)}</strong>
+              <span class="muted">→ ${escapeHtml(d.to || "—")}</span>
+            </div>
+            <div class="feed-meta">${moneyM(d.amount)}${
+              d.from ? ` · de ${escapeHtml(d.from)}` : ""
+            }</div>
+            <div class="feed-sub">${formatEpoch(d.date)}${bids ? ` · ${bids}` : ""}</div>
+          `);
+        })
+        .join("")
+    : `<p class="hint">Sin fichajes de mercado recientes.</p>`;
 }
 
 function renderBote(data, query = "") {
@@ -563,12 +745,29 @@ function renderManagers(data, query = "") {
           }</span>`;
         })
         .join("");
+      const rosterTop = (p.roster || [])
+        .slice(0, 8)
+        .map((pl) => {
+          const mark = pl.in_xi ? "★" : pl.on_bench ? "·" : "";
+          return `<li>
+            <span>${mark} ${escapeHtml(pl.position_label || "?")} ${escapeHtml(pl.name)}</span>
+            <span class="muted">${pl.clause != null ? moneyM(pl.clause) : moneyM(pl.price)}</span>
+          </li>`;
+        })
+        .join("");
+      const xiPts = p.lineup?.points_sum;
       return `<article class="manager-card">
         <h3>${escapeHtml(p.name)}</h3>
         <dl>
           <dt>Puesto liga</dt><dd>${p.season_position ?? "—"}</dd>
           <dt>Puntos</dt><dd>${p.points ?? 0}</dd>
           <dt>Valor</dt><dd>${moneyM(p.team_value)}</dd>
+          <dt>Saldo / max puja</dt><dd>${
+            p.balance != null ? moneyM(p.balance) : "—"
+          } / ${p.max_bid != null ? moneyM(p.max_bid) : "—"}</dd>
+          <dt>Once jornada</dt><dd>${
+            xiPts != null ? `${xiPts} pts · ${escapeHtml(p.lineup?.formation || "")}` : "—"
+          }</dd>
           <dt>Adeuda total</dt><dd class="money">${euro(p.adeudaTotalConProv)}</dd>
           <dt>Prim / Últ</dt><dd>${p.prim} / ${p.ult}</dd>
           <dt>Posición media</dt><dd>${
@@ -580,6 +779,15 @@ function renderManagers(data, query = "") {
           <dt>Premios</dt><dd>${moneyM(p.bonusTotal)}</dd>
         </dl>
         <div class="chips">${chips || "<span class='muted'>Sin jornadas</span>"}</div>
+        ${
+          rosterTop
+            ? `<div class="roster-preview"><h4>Plantilla</h4><ul>${rosterTop}</ul>${
+                (p.roster || []).length > 8
+                  ? `<p class="hint">+${(p.roster || []).length - 8} más</p>`
+                  : ""
+              }</div>`
+            : ""
+        }
       </article>`;
     })
     .join("");
@@ -694,7 +902,8 @@ function applyData(raw) {
   renderResumen(data);
   renderClasificacion(data);
   renderJornadaTab(data);
-  renderMercado(data);
+  renderMercado(data, document.getElementById("searchMarket")?.value || "");
+  renderMovimientos(data);
   renderBote(data, document.getElementById("searchBote").value);
   renderHistorico(data);
   renderManagers(data, document.getElementById("searchManagers").value);
@@ -775,6 +984,9 @@ async function boot() {
   });
   document.getElementById("searchManagers").addEventListener("input", (e) => {
     renderManagers(enrich(window.__ligaRaw), e.target.value);
+  });
+  document.getElementById("searchMarket")?.addEventListener("input", (e) => {
+    renderMercado(enrich(window.__ligaRaw), e.target.value);
   });
   document.getElementById("exportBote").addEventListener("click", () => {
     exportBoteCsv(enrich(window.__ligaRaw));

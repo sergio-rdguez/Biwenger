@@ -41,6 +41,8 @@ LEAGUE_DETAIL_URL = (
 ROUNDS_URL = "https://biwenger.as.com/api/v2/rounds/league"
 BOARD_URL = "https://biwenger.as.com/api/v2/league/{league_id}/board"
 
+from biwenger_feed import enrich_league_feed
+
 DEFAULT_POT = {"8": 0.5, "9": 1.0, "10": 1.5, "11": 2.0, "12": 2.5}
 HEADERS_BASE = {
     "Content-Type": "application/json",
@@ -516,6 +518,20 @@ def sync(dry_run: bool = False) -> dict:
 
     players = sorted(by_name.values(), key=lambda p: (p.get("season_position") or 999))
 
+    feed = enrich_league_feed(
+        session,
+        aliases=aliases,
+        normalize_name=normalize_name,
+        by_name=by_name,
+        standings=standings,
+        live_standings=live_standings,
+        board=board,
+        accept_all_new=accept_all_new,
+    )
+
+    # Reordenar tras enriquecer
+    players = sorted(by_name.values(), key=lambda p: (p.get("season_position") or 999))
+
     payload = {
         **current,
         "league_name": league_data.get("name")
@@ -533,6 +549,15 @@ def sync(dry_run: bool = False) -> dict:
         "current_jornada": current_jornada,
         "current_round_status": live_status,
         "current_round_id": current_round_id,
+        "market": feed.get("market"),
+        "activity": {
+            "transfers": (feed.get("activity") or {}).get("transfers") or [],
+            "market_deals": (feed.get("activity") or {}).get("market_deals") or [],
+            "clause_increments": (feed.get("activity") or {}).get("clause_increments")
+            or [],
+        },
+        "fixtures": feed.get("fixtures") or [],
+        "players_index": feed.get("players_index") or {},
         "updated_at": datetime.now(timezone.utc).isoformat(),
         "source": "biwenger-sync",
         "biwenger_league_id": league.get("id"),
