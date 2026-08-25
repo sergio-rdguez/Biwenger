@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>BOTE — Liga Biwenger</title>
+  <meta name="description" content="Clasificación, jornada en vivo, bote y estadísticas de tu liga Biwenger." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-brand">
+        <span class="brand-mark">BOTE</span>
+        <span class="brand-sub" id="sidebarSeason">2026/27</span>
+      </div>
+      <nav class="side-nav" aria-label="Secciones">
+        <button type="button" class="nav-item active" data-tab="resumen">Resumen</button>
+        <button type="button" class="nav-item" data-tab="clasificacion">Clasificación</button>
+        <button type="button" class="nav-item" data-tab="jornada">Jornada en vivo</button>
+        <button type="button" class="nav-item" data-tab="bote">Bote y adeudas</button>
+        <button type="button" class="nav-item" data-tab="historico">Histórico</button>
+        <button type="button" class="nav-item" data-tab="managers">Managers</button>
+        <button type="button" class="nav-item" data-tab="reglas">Reglas</button>
+      </nav>
+      <div class="sidebar-foot">
+        <button type="button" class="btn-sync" id="btnSync">Importar Biwenger</button>
+        <p class="sync-status" id="syncStatus" role="status" aria-live="polite"></p>
+        <p class="sidebar-updated" id="sidebarUpdated">—</p>
+      </div>
+    </aside>
+
+    <div class="shell">
+      <header class="topbar">
+        <button type="button" class="menu-toggle" id="menuToggle" aria-label="Abrir menú">☰</button>
+        <div>
+          <p class="eyebrow" id="seasonLabel">Temporada</p>
+          <h1 id="pageTitle">Resumen</h1>
+        </div>
+        <div class="topbar-meta">
+          <span class="pill" id="livePill">En vivo</span>
+          <strong id="leagueLabel">Liga</strong>
+        </div>
+      </header>
+
+      <main>
+        <section class="tab active" id="tab-resumen" data-title="Resumen">
+          <div class="kpi-grid" id="kpiGrid"></div>
+          <div class="grid-2">
+            <article class="panel">
+              <div class="panel-head"><h2>Top clasificación</h2></div>
+              <div id="resumenTop"></div>
+            </article>
+            <article class="panel">
+              <div class="panel-head"><h2>Mayor adeuda total</h2></div>
+              <div id="resumenDeuda"></div>
+            </article>
+          </div>
+          <article class="panel">
+            <div class="panel-head">
+              <h2>Jornada actual</h2>
+              <span class="badge" id="resumenJornadaBadge">—</span>
+            </div>
+            <div id="resumenJornada"></div>
+          </article>
+        </section>
+
+        <section class="tab" id="tab-clasificacion" data-title="Clasificación">
+          <article class="panel">
+            <div class="panel-head">
+              <h2>Clasificación de liga</h2>
+              <p class="hint">Puntos acumulados Biwenger · valor de plantilla</p>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Manager</th>
+                    <th>Pts</th>
+                    <th>Valor</th>
+                    <th>± día</th>
+                    <th>± puesto</th>
+                  </tr>
+                </thead>
+                <tbody id="classBody"></tbody>
+              </table>
+            </div>
+          </article>
+        </section>
+
+        <section class="tab" id="tab-jornada" data-title="Jornada en vivo">
+          <article class="panel">
+            <div class="panel-head">
+              <h2 id="jornadaHeading">Jornada</h2>
+              <label class="jornada-pick">
+                Ver
+                <select id="jornadaSelect"></select>
+              </label>
+            </div>
+            <p class="hint" id="jornadaHint"></p>
+            <ol class="rank-list" id="jornadaList"></ol>
+          </article>
+        </section>
+
+        <section class="tab" id="tab-bote" data-title="Bote y adeudas">
+          <div class="kpi-grid kpi-3" id="boteKpis"></div>
+          <article class="panel">
+            <div class="panel-head">
+              <h2>Adeudas por manager</h2>
+              <label class="search-wrap">
+                <span class="sr-only">Buscar</span>
+                <input type="search" id="searchBote" placeholder="Buscar manager…" />
+              </label>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Manager</th>
+                    <th>25/26</th>
+                    <th>26/27 oficial</th>
+                    <th>Provisional</th>
+                    <th>Total</th>
+                    <th>Últ</th>
+                    <th>Prim</th>
+                    <th>Pag</th>
+                  </tr>
+                </thead>
+                <tbody id="boteBody"></tbody>
+              </table>
+            </div>
+          </article>
+        </section>
+
+        <section class="tab" id="tab-historico" data-title="Histórico">
+          <article class="panel">
+            <div class="panel-head">
+              <h2>Posiciones por jornada</h2>
+              <p class="hint">P = provisional · F = final</p>
+            </div>
+            <div class="table-wrap" id="historicoWrap"></div>
+          </article>
+        </section>
+
+        <section class="tab" id="tab-managers" data-title="Managers">
+          <article class="panel">
+            <div class="panel-head">
+              <h2>Fichas</h2>
+              <label class="search-wrap">
+                <span class="sr-only">Buscar</span>
+                <input type="search" id="searchManagers" placeholder="Buscar manager…" />
+              </label>
+            </div>
+            <div class="manager-grid" id="managerGrid"></div>
+          </article>
+        </section>
+
+        <section class="tab" id="tab-reglas" data-title="Reglas">
+          <article class="panel rules">
+            <h2>Reglas del bote</h2>
+            <p>Quien acaba 8.º o peor en una jornada aporta al bote. Las jornadas provisionales se muestran en vivo y solo cuentan como oficiales al cerrarse en Biwenger.</p>
+            <ul id="rulesList"></ul>
+            <div class="rules-extra" id="rulesExtra"></div>
+          </article>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <div class="sidebar-backdrop" id="sidebarBackdrop" hidden></div>
+  <script src="app.js" type="module"></script>
+</body>
+</html>

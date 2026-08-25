@@ -1,0 +1,14 @@
+.env
+.env.*
+!.env.example
+.venv/
+venv/
+__pycache__/
+*.pyc
+.DS_Store
+Thumbs.db
+_seed.json
+_probe*.json
+_probe*.py
+_check_*.py
+_inspect.py

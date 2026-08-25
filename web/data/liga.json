@@ -1,0 +1,548 @@
+{
+  "league_name": "Carlos Vela team",
+  "season": "2026-2027",
+  "pot_rules": {
+    "8": 0.5,
+    "9": 1.0,
+    "10": 1.5,
+    "11": 2.0,
+    "12": 2.5
+  },
+  "last_place": 12,
+  "active_managers": 12,
+  "jornadas": 38,
+  "updated_at": "2026-08-25T11:17:46.541108+00:00",
+  "source": "biwenger-sync",
+  "previous_season": {
+    "season": "2025-2026",
+    "label": "Bote acumulado",
+    "file": "temporada-2025-2026.json",
+    "total": 286.5,
+    "players": [
+      {
+        "name": "Disci",
+        "adeuda": 16
+      },
+      {
+        "name": "Fabien",
+        "adeuda": 17.5
+      },
+      {
+        "name": "Ted Lasso",
+        "adeuda": 17.5
+      },
+      {
+        "name": "CB",
+        "adeuda": 18.5
+      },
+      {
+        "name": "Imanol",
+        "adeuda": 19.5
+      },
+      {
+        "name": "PJ",
+        "adeuda": 21
+      },
+      {
+        "name": "Bucaneros",
+        "adeuda": 21.5
+      },
+      {
+        "name": "Ajedrecista",
+        "adeuda": 25
+      },
+      {
+        "name": "Clifford",
+        "adeuda": 30
+      },
+      {
+        "name": "Pressing",
+        "adeuda": 31
+      },
+      {
+        "name": "Nachota",
+        "adeuda": 33
+      },
+      {
+        "name": "Luis E",
+        "adeuda": 36
+      }
+    ]
+  },
+  "players": [
+    {
+      "name": "Imanol",
+      "biwenger_id": 9959887,
+      "positions": {
+        "1": 1,
+        "2": 1
+      },
+      "rounds": {
+        "1": {
+          "position": 1,
+          "status": "final",
+          "points": 35
+        },
+        "2": {
+          "position": 1,
+          "status": "prematch",
+          "points": 35
+        }
+      },
+      "points": 35,
+      "team_value": 53390000,
+      "team_value_inc": 90000,
+      "season_position": 1,
+      "icon": "i/u/9959887.png?v=77",
+      "position_inc": 1,
+      "last_access": 1787651922,
+      "team_size": 17
+    },
+    {
+      "name": "Ted Lasso",
+      "biwenger_id": 9959771,
+      "positions": {
+        "1": 2,
+        "2": 2
+      },
+      "rounds": {
+        "1": {
+          "position": 2,
+          "status": "final",
+          "points": 35
+        },
+        "2": {
+          "position": 2,
+          "status": "prematch",
+          "points": 35
+        }
+      },
+      "points": 35,
+      "team_value": 43790000,
+      "team_value_inc": 190000,
+      "season_position": 2,
+      "icon": "i/u/9959771.png?v=4",
+      "position_inc": 1,
+      "last_access": 1787656550,
+      "team_size": 14
+    },
+    {
+      "name": "PJ",
+      "biwenger_id": 10103685,
+      "positions": {
+        "1": 3,
+        "2": 3
+      },
+      "rounds": {
+        "1": {
+          "position": 3,
+          "status": "final",
+          "points": 32
+        },
+        "2": {
+          "position": 3,
+          "status": "prematch",
+          "points": 32
+        }
+      },
+      "points": 32,
+      "team_value": 38520000,
+      "team_value_inc": 40000,
+      "season_position": 3,
+      "icon": "i/u/10103685.png?v=85",
+      "position_inc": 1,
+      "last_access": 1787647020,
+      "team_size": 11
+    },
+    {
+      "name": "Disci",
+      "biwenger_id": 10100432,
+      "positions": {
+        "1": 4,
+        "2": 4
+      },
+      "rounds": {
+        "1": {
+          "position": 4,
+          "status": "final",
+          "points": 24
+        },
+        "2": {
+          "position": 4,
+          "status": "prematch",
+          "points": 24
+        }
+      },
+      "points": 24,
+      "team_value": 41470000,
+      "team_value_inc": -100000,
+      "season_position": 4,
+      "icon": "i/u/10100432.png",
+      "position_inc": 4,
+      "last_access": 1787634853,
+      "team_size": 13
+    },
+    {
+      "name": "Nachota",
+      "biwenger_id": 1184544,
+      "positions": {
+        "1": 5,
+        "2": 5
+      },
+      "rounds": {
+        "1": {
+          "position": 5,
+          "status": "final",
+          "points": 23
+        },
+        "2": {
+          "position": 5,
+          "status": "prematch",
+          "points": 23
+        }
+      },
+      "points": 23,
+      "team_value": 40050000,
+      "team_value_inc": 430000,
+      "season_position": 5,
+      "icon": "i/u/1184544.png?v=82",
+      "position_inc": 2,
+      "last_access": 1787654342,
+      "team_size": 15
+    },
+    {
+      "name": "Luis E",
+      "biwenger_id": 7789246,
+      "positions": {
+        "1": 6,
+        "2": 6
+      },
+      "rounds": {
+        "1": {
+          "position": 6,
+          "status": "final",
+          "points": 23
+        },
+        "2": {
+          "position": 6,
+          "status": "prematch",
+          "points": 23
+        }
+      },
+      "points": 23,
+      "team_value": 30070000,
+      "team_value_inc": -170000,
+      "season_position": 6,
+      "icon": null,
+      "position_inc": 5,
+      "last_access": 1787638052,
+      "team_size": 16
+    },
+    {
+      "name": "Ajedrecista",
+      "biwenger_id": 12784923,
+      "positions": {
+        "1": 7,
+        "2": 7
+      },
+      "rounds": {
+        "1": {
+          "position": 7,
+          "status": "final",
+          "points": 22
+        },
+        "2": {
+          "position": 7,
+          "status": "prematch",
+          "points": 22
+        }
+      },
+      "points": 22,
+      "team_value": 35020000,
+      "team_value_inc": 410000,
+      "season_position": 7,
+      "icon": "i/u/12784923.png?v=91",
+      "position_inc": -1,
+      "last_access": 1787641047,
+      "team_size": 12
+    },
+    {
+      "name": "Bucaneros",
+      "biwenger_id": 1184540,
+      "positions": {
+        "1": 8,
+        "2": 8
+      },
+      "rounds": {
+        "1": {
+          "position": 8,
+          "status": "final",
+          "points": 17
+        },
+        "2": {
+          "position": 8,
+          "status": "prematch",
+          "points": 17
+        }
+      },
+      "points": 17,
+      "team_value": 36310000,
+      "team_value_inc": 1030000,
+      "season_position": 8,
+      "icon": "i/u/1184540.png",
+      "position_inc": -7,
+      "last_access": 1787634692,
+      "team_size": 18
+    },
+    {
+      "name": "Clifford",
+      "biwenger_id": 11679631,
+      "positions": {
+        "1": 9,
+        "2": 9
+      },
+      "rounds": {
+        "1": {
+          "position": 9,
+          "status": "final",
+          "points": 16
+        },
+        "2": {
+          "position": 9,
+          "status": "prematch",
+          "points": 16
+        }
+      },
+      "points": 16,
+      "team_value": 34570000,
+      "team_value_inc": 70000,
+      "season_position": 9,
+      "icon": "i/u/11679631.png?v=15",
+      "position_inc": null,
+      "last_access": 1787648644,
+      "team_size": 11
+    },
+    {
+      "name": "Fabien",
+      "biwenger_id": 7789526,
+      "positions": {
+        "1": 10,
+        "2": 10
+      },
+      "rounds": {
+        "1": {
+          "position": 10,
+          "status": "final",
+          "points": 14
+        },
+        "2": {
+          "position": 10,
+          "status": "prematch",
+          "points": 14
+        }
+      },
+      "points": 14,
+      "team_value": 43250000,
+      "team_value_inc": -60000,
+      "season_position": 10,
+      "icon": "i/u/7789526.png?v=84",
+      "position_inc": -5,
+      "last_access": 1787634820,
+      "team_size": 13
+    },
+    {
+      "name": "CB",
+      "biwenger_id": 7791198,
+      "positions": {
+        "1": 11,
+        "2": 11
+      },
+      "rounds": {
+        "1": {
+          "position": 11,
+          "status": "final",
+          "points": 12
+        },
+        "2": {
+          "position": 11,
+          "status": "prematch",
+          "points": 12
+        }
+      },
+      "points": 12,
+      "team_value": 35160000,
+      "team_value_inc": -190000,
+      "season_position": 11,
+      "icon": "i/u/7791198.png?v=9",
+      "position_inc": 1,
+      "last_access": 1787650294,
+      "team_size": 17
+    },
+    {
+      "name": "Pressing",
+      "biwenger_id": 12795318,
+      "positions": {
+        "1": 12,
+        "2": 12
+      },
+      "rounds": {
+        "1": {
+          "position": 12,
+          "status": "final",
+          "points": 6
+        },
+        "2": {
+          "position": 12,
+          "status": "prematch",
+          "points": 6
+        }
+      },
+      "points": 6,
+      "team_value": 45060000,
+      "team_value_inc": -80000,
+      "season_position": 12,
+      "icon": "i/u/12795318.png",
+      "position_inc": -2,
+      "last_access": 1787562099,
+      "team_size": 14
+    }
+  ],
+  "biwenger_league_id": 298061,
+  "classification": [
+    {
+      "name": "Imanol",
+      "biwenger_name": "Imanol Alguacil",
+      "position": 1,
+      "points": 35,
+      "team_value": 53390000,
+      "team_value_inc": 90000,
+      "position_inc": 1,
+      "icon": "i/u/9959887.png?v=77"
+    },
+    {
+      "name": "Ted Lasso",
+      "biwenger_name": "Ted Lasso 🥸",
+      "position": 2,
+      "points": 35,
+      "team_value": 43790000,
+      "team_value_inc": 190000,
+      "position_inc": 1,
+      "icon": "i/u/9959771.png?v=4"
+    },
+    {
+      "name": "PJ",
+      "biwenger_name": "PIZARRITA JIMÉNEZ",
+      "position": 3,
+      "points": 32,
+      "team_value": 38520000,
+      "team_value_inc": 40000,
+      "position_inc": 1,
+      "icon": "i/u/10103685.png?v=85"
+    },
+    {
+      "name": "Disci",
+      "biwenger_name": "Discipulos del Cholo",
+      "position": 4,
+      "points": 24,
+      "team_value": 41470000,
+      "team_value_inc": -100000,
+      "position_inc": 4,
+      "icon": "i/u/10100432.png"
+    },
+    {
+      "name": "Nachota",
+      "biwenger_name": "Nachota",
+      "position": 5,
+      "points": 23,
+      "team_value": 40050000,
+      "team_value_inc": 430000,
+      "position_inc": 2,
+      "icon": "i/u/1184544.png?v=82"
+    },
+    {
+      "name": "Luis E",
+      "biwenger_name": "Luis Enrique",
+      "position": 6,
+      "points": 23,
+      "team_value": 30070000,
+      "team_value_inc": -170000,
+      "position_inc": 5,
+      "icon": null
+    },
+    {
+      "name": "Ajedrecista",
+      "biwenger_name": "Club de Ajedrez",
+      "position": 7,
+      "points": 22,
+      "team_value": 35020000,
+      "team_value_inc": 410000,
+      "position_inc": -1,
+      "icon": "i/u/12784923.png?v=91"
+    },
+    {
+      "name": "Bucaneros",
+      "biwenger_name": "Bucaneros FC",
+      "position": 8,
+      "points": 17,
+      "team_value": 36310000,
+      "team_value_inc": 1030000,
+      "position_inc": -7,
+      "icon": "i/u/1184540.png"
+    },
+    {
+      "name": "Clifford",
+      "biwenger_name": "Clifford Yuma",
+      "position": 9,
+      "points": 16,
+      "team_value": 34570000,
+      "team_value_inc": 70000,
+      "position_inc": null,
+      "icon": "i/u/11679631.png?v=15"
+    },
+    {
+      "name": "Fabien",
+      "biwenger_name": "Fabien Barthez",
+      "position": 10,
+      "points": 14,
+      "team_value": 43250000,
+      "team_value_inc": -60000,
+      "position_inc": -5,
+      "icon": "i/u/7789526.png?v=84"
+    },
+    {
+      "name": "CB",
+      "biwenger_name": "Cuñaaaaos Bolingnoli",
+      "position": 11,
+      "points": 12,
+      "team_value": 35160000,
+      "team_value_inc": -190000,
+      "position_inc": 1,
+      "icon": "i/u/7791198.png?v=9"
+    },
+    {
+      "name": "Pressing",
+      "biwenger_name": "Mr Pressing",
+      "position": 12,
+      "points": 6,
+      "team_value": 45060000,
+      "team_value_inc": -80000,
+      "position_inc": -2,
+      "icon": "i/u/12795318.png"
+    }
+  ],
+  "rounds_meta": {
+    "1": {
+      "number": 1,
+      "status": "final",
+      "round_id": null
+    },
+    "2": {
+      "number": 2,
+      "status": "prematch",
+      "round_id": 4900
+    }
+  },
+  "current_jornada": 2,
+  "current_round_status": "prematch",
+  "current_round_id": 4900
+}
