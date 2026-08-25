@@ -22,11 +22,33 @@ POS_LABEL = {1: "PT", 2: "DF", 3: "MC", 4: "DL"}
 
 
 def last_fitness_points(fitness: Any) -> int | None:
-    if not isinstance(fitness, list):
+    """Puntos de la jornada más reciente.
+
+    En Biwenger, `fitness` va de más reciente a más antigua:
+    fitness[0] = jornada activa / última puntuada, fitness[1] = anterior, …
+    """
+    if not isinstance(fitness, list) or not fitness:
         return None
-    for value in reversed(fitness):
-        if isinstance(value, (int, float)):
-            return int(value)
+    value = fitness[0]
+    if isinstance(value, (int, float)):
+        return int(value)
+    return None
+
+
+def fitness_for_jornada(
+    fitness: Any,
+    jornada: int | None,
+    current_jornada: int | None,
+) -> int | None:
+    """Puntos de un jugador en una jornada concreta (fitness newest-first)."""
+    if not isinstance(fitness, list) or jornada is None or current_jornada is None:
+        return None
+    offset = int(current_jornada) - int(jornada)
+    if offset < 0 or offset >= len(fitness):
+        return None
+    value = fitness[offset]
+    if isinstance(value, (int, float)):
+        return int(value)
     return None
 
 
@@ -43,15 +65,27 @@ def fetch_competition_meta(session: requests.Session) -> dict:
     }
 
 
-def lineup_gameweek_points(lineup: dict | None, catalog_players: dict) -> int | None:
-    """Sum of last fitness points for starters. None if nobody has scored data."""
+def lineup_gameweek_points(
+    lineup: dict | None,
+    catalog_players: dict,
+    *,
+    jornada: int | None = None,
+    current_jornada: int | None = None,
+) -> int | None:
+    """Suma puntos de jornada del once (fitness newest-first)."""
     if not isinstance(lineup, dict):
         return None
+    target = jornada if jornada is not None else current_jornada
     total = 0
     scored = 0
     for pid in lineup.get("players") or []:
+        if pid is None:
+            continue
         raw = catalog_players.get(str(pid)) or {}
-        pts = last_fitness_points(raw.get("fitness"))
+        if target is not None and current_jornada is not None:
+            pts = fitness_for_jornada(raw.get("fitness"), target, current_jornada)
+        else:
+            pts = last_fitness_points(raw.get("fitness"))
         if pts is None:
             continue
         total += pts
@@ -307,16 +341,6 @@ def fetch_user_detail(session: requests.Session, user_id: int) -> dict:
     return res.json().get("data") or {}
 
 
-def fitness_at_jornada(fitness: Any, jornada: int) -> int | None:
-    """Puntos del jugador en una jornada (fitness[0] = J1)."""
-    if not isinstance(fitness, list) or jornada < 1:
-        return None
-    idx = jornada - 1
-    if idx < len(fitness) and isinstance(fitness[idx], (int, float)):
-        return int(fitness[idx])
-    return None
-
-
 def extract_round_number(round_obj: dict | None) -> int | None:
     if not isinstance(round_obj, dict):
         return None
@@ -336,16 +360,20 @@ def build_lineup_detail(
     catalog: dict[str, dict],
     teams: dict[str, dict],
     jornada: int | None = None,
+    current_jornada: int | None = None,
 ) -> dict | None:
     if not isinstance(lineup, dict):
         return None
+    ref_current = current_jornada if current_jornada is not None else jornada
     starters = []
     for pid in lineup.get("players") or []:
         if pid is None:
             continue
         info = slim_player(pid, catalog, teams)
         if jornada is not None:
-            info["points_jornada"] = fitness_at_jornada(info.get("fitness"), jornada)
+            info["points_jornada"] = fitness_for_jornada(
+                info.get("fitness"), jornada, ref_current
+            )
         else:
             info["points_jornada"] = info.get("points_last")
         starters.append(info)
@@ -355,7 +383,9 @@ def build_lineup_detail(
             continue
         info = slim_player(pid, catalog, teams)
         if jornada is not None:
-            info["points_jornada"] = fitness_at_jornada(info.get("fitness"), jornada)
+            info["points_jornada"] = fitness_for_jornada(
+                info.get("fitness"), jornada, ref_current
+            )
         else:
             info["points_jornada"] = info.get("points_last")
         bench.append(info)
@@ -374,11 +404,13 @@ def build_lineup_from_history(
     entry: dict,
     catalog: dict[str, dict],
     teams: dict[str, dict],
+    current_jornada: int | None = None,
 ) -> dict | None:
     rnd = entry.get("round") or {}
     jornada = extract_round_number(rnd)
     if jornada is None:
         return None
+    ref_current = current_jornada if current_jornada is not None else jornada
     starters = []
     for row in entry.get("players") or []:
         if isinstance(row, dict):
@@ -396,13 +428,14 @@ def build_lineup_from_history(
                 info["position"] = pos
                 info["position_label"] = POS_LABEL.get(pos, info.get("position_label"))
             fit = row.get("fitness") if isinstance(row.get("fitness"), list) else info.get("fitness")
-            info["points_jornada"] = fitness_at_jornada(fit, jornada)
-            if info["points_jornada"] is None:
-                info["points_jornada"] = last_fitness_points(fit)
+            info["points_jornada"] = fitness_for_jornada(fit, jornada, ref_current)
         else:
             info = slim_player(row, catalog, teams)
-            info["points_jornada"] = fitness_at_jornada(info.get("fitness"), jornada)
+            info["points_jornada"] = fitness_for_jornada(
+                info.get("fitness"), jornada, ref_current
+            )
         starters.append(info)
+    official = entry.get("points")
     return {
         "formation": entry.get("type"),
         "counting": entry.get("count"),
@@ -412,8 +445,8 @@ def build_lineup_from_history(
         "league_position": entry.get("position"),
         "starters": starters,
         "bench": [],
-        "points_sum": entry.get("points")
-        if entry.get("points") is not None
+        "points_sum": official
+        if official is not None
         else sum(p.get("points_jornada") or 0 for p in starters),
     }
 
@@ -458,12 +491,15 @@ def build_lineups_by_round(
     history: list,
     catalog: dict[str, dict],
     teams: dict[str, dict],
+    current_jornada: int | None = None,
 ) -> dict[str, dict]:
     out: dict[str, dict] = {}
     for entry in history or []:
         if not isinstance(entry, dict):
             continue
-        detail = build_lineup_from_history(entry, catalog, teams)
+        detail = build_lineup_from_history(
+            entry, catalog, teams, current_jornada=current_jornada
+        )
         if not detail or detail.get("jornada") is None:
             continue
         public = slim_lineup_public(detail)
@@ -545,9 +581,17 @@ def enrich_league_feed(
         starter_ids = {int(x) for x in (lineup.get("players") or []) if x is not None}
         bench_ids = {int(x) for x in (lineup.get("discarded") or []) if x is not None}
         history = detail.get("lineups") or []
-        lineups_by_round = build_lineups_by_round(history, catalog, teams)
+        lineups_by_round = build_lineups_by_round(
+            history, catalog, teams, current_jornada=current_jornada
+        )
         live_detail = slim_lineup_public(
-            build_lineup_detail(lineup, catalog, teams, jornada=current_jornada)
+            build_lineup_detail(
+                lineup,
+                catalog,
+                teams,
+                jornada=current_jornada,
+                current_jornada=current_jornada,
+            )
         )
         if (
             current_jornada

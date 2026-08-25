@@ -359,7 +359,11 @@ function renderJornadaInto(data, jornada, targetId, { expandable = false } = {})
       const fee = potRules[String(r.pos)];
       const pay = typeof fee === "number";
       const pts =
-        r.points != null ? `${r.points} pts` : r.status === "provisional" ? "en vivo" : "—";
+        r.points != null
+          ? `${r.points} pts`
+          : r.status === "provisional"
+            ? "en vivo"
+            : "—";
       const prize =
         r.status === "final" && r.bonus
           ? `Premio ${moneyM(r.bonus)}${pay ? ` · Bote ${euro(fee)}` : ""}`
@@ -367,13 +371,11 @@ function renderJornadaInto(data, jornada, targetId, { expandable = false } = {})
             ? `Bote ${euro(fee)}`
             : "—";
       const hasXi = expandable && r.lineup?.starters?.length;
-      const xiSum =
-        hasXi && r.lineup?.points_sum != null ? ` · XI ${r.lineup.points_sum} pts` : "";
       const formation = hasXi && r.lineup?.formation ? ` · ${r.lineup.formation}` : "";
       const rowInner = `
         <span class="pos">${r.pos}º</span>
         <span class="rank-name">${escapeHtml(r.name)}</span>
-        <span class="muted">${pts}${xiSum}${escapeHtml(formation)}</span>
+        <span class="muted">${pts}${escapeHtml(formation)}</span>
         <span>${prize}</span>`;
       if (!expandable) {
         return `<li class="rank-item ${pay ? "pay" : ""}">
@@ -426,7 +428,7 @@ function renderLineupDetail(lineup) {
   return `<div class="lineup-detail">
     <div class="lineup-meta">
       <span>${escapeHtml(lineup.formation || "—")}</span>
-      <strong>Suma titulares: ${lineup.points_sum ?? 0} pts</strong>
+      <strong>Pts jornada (once): ${lineup.points_sum ?? 0}</strong>
     </div>
     <div class="table-wrap compact">
       <table class="lineup-table">
@@ -512,7 +514,7 @@ function renderJornadaTab(data) {
           ? `Jornada abierta${
               meta.started_at ? ` · ${formatEpoch(meta.started_at)}` : ""
             }, pero aún no hay puntos nuevos. No suma al bote.`
-          : "Resultado provisional: puntos del once y ranking estimado.") +
+          : "Puntos de esta jornada (como la columna «Jor.» de Biwenger).") +
       postponeNote +
       xiNote;
     renderFixtures(data, "jornadaFixtures");

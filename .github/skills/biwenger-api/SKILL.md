@@ -28,7 +28,8 @@ description: >-
 
 Feed ampliado en `biwenger_feed.py` → `enrich_league_feed()` (mercado, actividad, fixtures, once, plantillas).
 
-Puntos de jornada por jugador ≈ último valor numérico de `fitness[]` del catálogo (`points_last` / `points_jornada`).
+Puntos de jornada por jugador: `fitness[]` del catálogo va **de más reciente a más antigua**
+(`fitness[0]` = jornada activa / última puntuada). Offset = `current_jornada - jornada`.
 
 ## Estados de jornada
 
@@ -46,7 +47,7 @@ Fuente de verdad de calendarios: `competitions/la-liga/data` → `season.rounds`
 El tablón se filtra a los `round.id` de la temporada actual (evita mezclar temporadas viejas).
 
 Si `/rounds/league` sigue mostrando puntos de la jornada anterior, el ranking provisional
-se calcula sumando el último valor de `fitness[]` de cada titular del once.
+se calcula sumando `fitness[0]` (jornada activa) de cada titular del once.
 
 `postponed_rounds` lista aplazadas pendientes (p.ej. «Jornada 1 (aplazada)»).
 

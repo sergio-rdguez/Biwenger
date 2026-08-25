@@ -95,14 +95,26 @@ class SyncBiwengerTests(unittest.TestCase):
             )
         )
 
-    def test_lineup_gameweek_points_sums_last_fitness(self):
+    def test_lineup_gameweek_points_sums_newest_fitness(self):
+        # fitness newest-first: [J2, J1]
         catalog = {
-            "1": {"fitness": [3, 4]},
-            "2": {"fitness": [None, 5]},
+            "1": {"fitness": [4, 3]},
+            "2": {"fitness": [5, None]},
             "3": {"fitness": []},
         }
         lineup = {"players": [1, 2, 3]}
-        self.assertEqual(lineup_gameweek_points(lineup, catalog), 9)
+        self.assertEqual(
+            lineup_gameweek_points(
+                lineup, catalog, jornada=2, current_jornada=2
+            ),
+            9,
+        )
+        self.assertEqual(
+            lineup_gameweek_points(
+                lineup, catalog, jornada=1, current_jornada=2
+            ),
+            3,
+        )
         self.assertIsNone(lineup_gameweek_points({"players": [3]}, catalog))
 
 

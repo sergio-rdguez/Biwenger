@@ -493,7 +493,12 @@ def sync(dry_run: bool = False) -> dict:
             pts = int(row["points"]) if row.get("points") is not None else None
             live_rows.append((web_name, int(pos), pts))
             lineup = row.get("lineup") if isinstance(row.get("lineup"), dict) else {}
-            gw = lineup_gameweek_points(lineup, catalog_players)
+            gw = lineup_gameweek_points(
+                lineup,
+                catalog_players,
+                jornada=current_jornada,
+                current_jornada=current_jornada,
+            )
             if gw is not None:
                 gw_rows.append((web_name, gw))
 
