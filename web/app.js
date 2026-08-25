@@ -585,21 +585,98 @@ function renderManagers(data, query = "") {
     .join("");
 }
 
+const CLAUSE_TIERS = [
+  ["Hasta 200.000 €", "400 %"],
+  ["Hasta 300.000 €", "350 %"],
+  ["Hasta 400.000 €", "300 %"],
+  ["Hasta 500.000 €", "280 %"],
+  ["Hasta 600.000 €", "260 %"],
+  ["Hasta 700.000 €", "240 %"],
+  ["Hasta 800.000 €", "220 %"],
+  ["Hasta 900.000 €", "210 %"],
+  ["Hasta 1.000.000 €", "200 %"],
+  ["Hasta 1.250.000 €", "180 %"],
+  ["Hasta 1.500.000 €", "170 %"],
+  ["Hasta 3.500.000 €", "150 %"],
+  ["Hasta 6.500.000 €", "130 %"],
+  ["Hasta 12.000.000 €", "120 %"],
+  ["Hasta 25.000.000 €", "110 %"],
+  ["Más de 25.000.000 €", "105 %"],
+];
+
 function renderReglas(data) {
-  const ul = document.getElementById("rulesList");
-  ul.innerHTML = "";
-  Object.entries(data.pot_rules || {})
+  const potRows = Object.entries(data.pot_rules || {})
     .sort((a, b) => Number(a[0]) - Number(b[0]))
-    .forEach(([pos, fee]) => {
-      const li = document.createElement("li");
-      li.textContent = `${pos}º → ${euro(Number(fee))}`;
-      ul.appendChild(li);
-    });
-  document.getElementById("rulesExtra").innerHTML = `
-    <p>Arrastre temporada ${escapeHtml(data.previous_season?.season || "2025-2026")}: <strong class="money">${euro(
-      data.acumulado
-    )}</strong>.</p>
-    <p>Las aportaciones provisionales se recalculan en cada importación hasta que Biwenger cierra la jornada.</p>`;
+    .map(
+      ([pos, fee]) =>
+        `<tr><td>${pos}º</td><td class="money">${euro(Number(fee))}</td></tr>`
+    )
+    .join("");
+
+  const clauseRows = CLAUSE_TIERS.map(
+    ([range, pct]) => `<tr><td>${range}</td><td>${pct}</td></tr>`
+  ).join("");
+
+  document.getElementById("rulesContent").innerHTML = `
+    <article class="panel rules">
+      <h2>Espíritu de la liga</h2>
+      <p>Es un juego <strong>individual</strong>. Cada manager compite por sí mismo: no se permiten pactos, estrategias de equipo ni cualquier movimiento acordado fuera del mercado limpio.</p>
+      <ul class="rules-bullets">
+        <li>Prohibidos los clausulazos, fichajes o maniobras coordinadas tras hablarlo con otro participante.</li>
+        <li>No se puede subir el valor de la cláusula de un jugador mediante intercambios: en un trueque, la cláusula debe mantenerse igual o bajar.</li>
+        <li>El incumplimiento se considera antideportivo y queda a criterio de la organización de la liga.</li>
+      </ul>
+    </article>
+
+    <article class="panel rules">
+      <h2>Economía inicial y primas</h2>
+      <p>Al empezar la temporada, el saldo inicial es <strong>40 M€ menos el valor de mercado de un equipo aleatorio</strong> de LaLiga. Así todos parten con una base distinta y aleatoria.</p>
+      <ul class="rules-bullets">
+        <li><strong>Prima por puntos:</strong> 50.000 € por cada punto que aporte un jugador.</li>
+        <li>El resto de primas y bonificaciones se consultan en los ajustes de Biwenger de la liga.</li>
+        <li>Se pueden <strong>hacer hasta 3 clausulazos y recibir hasta 3 clausulazos por día</strong>.</li>
+      </ul>
+    </article>
+
+    <article class="panel rules">
+      <h2>Cláusulas base</h2>
+      <p>La cláusula mínima de un jugador se calcula aplicando un porcentaje sobre su valor de mercado, según estos tramos:</p>
+      <div class="table-wrap">
+        <table class="rules-table">
+          <thead><tr><th>Valor de mercado</th><th>Cláusula base</th></tr></thead>
+          <tbody>${clauseRows}</tbody>
+        </table>
+      </div>
+      <div class="rules-callout">
+        <strong>Dinero a meter en cláusulas</strong>
+        <p>Puedes destinar a cláusulas hasta el <strong>200 % del saldo invertido</strong> (el capital ya empleado en plantilla). Ese dinero queda bloqueado en la cláusula: <strong>no se puede recuperar lo invertido</strong> en ellas.</p>
+      </div>
+    </article>
+
+    <article class="panel rules">
+      <h2>Cesiones</h2>
+      <ul class="rules-bullets">
+        <li><strong>No se pueden ceder porteros.</strong></li>
+        <li>Precio mínimo de la cesión: <strong>max(500.000 €; 10 % del valor de mercado)</strong>.</li>
+        <li>Como máximo, <strong>dar o recibir 1 jugador por jornada</strong>.</li>
+        <li>En las <strong>últimas 8 jornadas</strong> de la temporada <strong>no hay cesiones</strong>.</li>
+      </ul>
+    </article>
+
+    <article class="panel rules">
+      <h2>Bote de final de temporada</h2>
+      <p>Cada jornada, quienes terminan del 8.º al 12.º aportan al bote común destinado a la <strong>cena de final de temporada</strong>. Las aportaciones provisionales se muestran en vivo y solo se consolidan cuando Biwenger cierra la jornada.</p>
+      <div class="table-wrap">
+        <table class="rules-table rules-table-compact">
+          <thead><tr><th>Posición</th><th>Aportación</th></tr></thead>
+          <tbody>${potRows}</tbody>
+        </table>
+      </div>
+      <p class="rules-note">Arrastre temporada ${escapeHtml(
+        data.previous_season?.season || "2025-2026"
+      )}: <strong class="money">${euro(data.acumulado)}</strong> (sin Bonilla).</p>
+    </article>
+  `;
 }
 
 function applyData(raw) {

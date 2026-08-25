@@ -37,9 +37,19 @@ Definido en `liga.json` → `pot_rules` y en sync `DEFAULT_POT`.
 
 Bonilla **excluido** de la liga activa y del arrastre vivo.
 
+## Normas de liga (además del bote)
+
+Documentadas en la pestaña **Reglas** (`web/app.js` → `renderReglas`):
+
+- Cláusulas base por tramos de VM (400 % … 105 %)
+- Dinero en cláusulas: hasta 200 % del saldo invertido; no recuperable
+- Cesiones: sin porteros; min `max(0,5M; 10% VM)`; máx. 1 por jornada; bloqueadas en las últimas 8
+- Inicio: `40M − VM equipo aleatorio`; 50k €/punto; 3 clausulazos/día (hacer y recibir)
+- Fair play: juego individual; no subir cláusulas vía intercambios
+
 ## Al cambiar reglas
 
-1. Actualizar `pot_rules` en `data/liga.json` (y tras sync, `web/data/`)
-2. Ajustar UI de pestaña Reglas / KPIs si hace falta
+1. Actualizar `pot_rules` en `data/liga.json` (y tras sync, `web/data/`) si cambia el bote
+2. Actualizar texto/tablas en `renderReglas` de `web/app.js`
 3. Documentar aquí el cambio
 4. No recalcular a mano el histórico 25/26 salvo petición explícita

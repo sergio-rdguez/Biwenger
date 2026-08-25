@@ -614,24 +614,78 @@ tbody tr:hover {
   font-size: 0.9rem;
 }
 
-.rules ul {
-  list-style: none;
-  margin: 0.9rem 0 0;
-  padding: 0;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.45rem;
+.rules-layout {
+  display: grid;
+  gap: 1rem;
 }
 
-.rules li {
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  padding: 0.4rem 0.8rem;
+.rules h2 {
+  margin: 0 0 0.55rem;
+}
+
+.rules > p {
+  margin: 0;
   color: var(--muted);
 }
 
-.rules-extra {
+.rules-bullets {
+  list-style: none;
+  margin: 0.85rem 0 0;
+  padding: 0;
+  display: grid;
+  gap: 0.55rem;
+}
+
+.rules-bullets li {
+  position: relative;
+  padding: 0.55rem 0.75rem 0.55rem 1.85rem;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.14);
+  color: var(--text);
+}
+
+.rules-bullets li::before {
+  content: "";
+  position: absolute;
+  left: 0.75rem;
+  top: 0.95rem;
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: 50%;
+  background: var(--accent);
+}
+
+.rules-table {
+  min-width: 0;
+  margin-top: 0.85rem;
+}
+
+.rules-table-compact {
+  max-width: 320px;
+}
+
+.rules-callout {
   margin-top: 1rem;
+  padding: 0.9rem 1rem;
+  border: 1px solid rgba(226, 176, 72, 0.35);
+  border-radius: 14px;
+  background: rgba(226, 176, 72, 0.08);
+}
+
+.rules-callout strong {
+  display: block;
+  color: var(--accent);
+  margin-bottom: 0.35rem;
+}
+
+.rules-callout p {
+  margin: 0;
+  color: var(--text);
+}
+
+.rules-note {
+  margin: 0.9rem 0 0;
   color: var(--muted);
   font-size: 0.92rem;
 }
