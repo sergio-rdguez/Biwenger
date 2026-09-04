@@ -22,6 +22,42 @@
   box-sizing: border-box;
 }
 
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+* {
+  scrollbar-color: rgba(226, 176, 72, 0.35) transparent;
+  scrollbar-width: thin;
+}
+
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: rgba(226, 176, 72, 0.35);
+  border-radius: 999px;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: rgba(226, 176, 72, 0.55);
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
 html,
 body {
   margin: 0;
@@ -42,6 +78,53 @@ body {
   display: grid;
   grid-template-columns: var(--sidebar-w) 1fr;
   min-height: 100vh;
+}
+
+.app[hidden] {
+  display: none;
+}
+
+.boot-loader {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  gap: 1rem;
+  justify-items: center;
+}
+
+/* [hidden] empata en especificidad con ".boot-loader{display:grid}" y
+   perdería por orden de aparición si no se refuerza explícitamente. */
+.boot-loader[hidden] {
+  display: none;
+}
+
+.boot-loader-mark {
+  font-family: var(--display);
+  font-size: 2rem;
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  color: var(--accent);
+}
+
+.boot-loader-spin {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  border: 3px solid var(--line);
+  border-top-color: var(--accent);
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .boot-loader-spin {
+    animation-duration: 2.4s;
+  }
 }
 
 .sidebar {
@@ -126,6 +209,12 @@ body {
   border-radius: 999px;
   padding: 0.7rem 1rem;
   cursor: pointer;
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+
+.btn-sync:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(226, 176, 72, 0.25);
 }
 
 .btn-sync:disabled {
@@ -260,6 +349,12 @@ main {
   border-radius: var(--radius);
   padding: 1rem 1.05rem;
   box-shadow: var(--shadow);
+  transition: transform 0.15s ease, border-color 0.15s ease;
+}
+
+.kpi:hover {
+  transform: translateY(-2px);
+  border-color: rgba(226, 176, 72, 0.3);
 }
 
 .kpi span {
@@ -317,6 +412,7 @@ main {
   border-radius: 999px;
   padding: 0.5rem 0.9rem;
   cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
 }
 
 .btn-secondary:hover {
@@ -665,6 +761,12 @@ tbody tr:hover {
   border-radius: 14px;
   padding: 0.9rem;
   background: rgba(0, 0, 0, 0.16);
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.manager-card:hover {
+  border-color: rgba(226, 176, 72, 0.3);
+  background: rgba(0, 0, 0, 0.22);
 }
 
 .manager-card h3 {
@@ -893,12 +995,15 @@ tbody tr:hover {
 }
 
 .col-filter {
-  position: absolute;
-  z-index: 20;
-  top: calc(100% + 0.25rem);
-  left: 0;
+  /* position: fixed (not absolute) a propósito: los menús cuelgan de <th>
+     dentro de .table-wrap, que fuerza overflow-y:auto en cuanto tiene
+     overflow-x:auto (regla CSS), así que "absolute" los recortaba al
+     abrir un filtro en tablas con muchas filas. "fixed" escapa a ese
+     clipping; la posición se calcula en JS (ver positionFilterMenu). */
+  position: fixed;
+  z-index: 60;
   min-width: 220px;
-  max-width: min(280px, 80vw);
+  max-width: min(280px, 90vw);
   padding: 0.55rem;
   border-radius: 12px;
   border: 1px solid var(--line);

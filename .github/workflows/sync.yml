@@ -8,19 +8,10 @@ on:
 
 permissions:
   contents: write
-  pages: write
-  id-token: write
-
-concurrency:
-  group: pages
-  cancel-in-progress: false
 
 jobs:
   sync:
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
 
@@ -50,14 +41,7 @@ jobs:
             git push
           fi
 
-      - name: Setup Pages
-        uses: actions/configure-pages@v5
-
-      - name: Upload site
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: web
-
-      - name: Deploy
-        id: deployment
-        uses: actions/deploy-pages@v4
+      # El deploy a Pages lo hace pages.yml, disparado por el push anterior.
+      # Antes este job también desplegaba aquí, duplicando el deploy (y
+      # compitiendo con pages.yml por el mismo grupo de concurrencia), lo
+      # que gastaba el doble de minutos de Actions cada día para nada.

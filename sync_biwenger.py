@@ -297,16 +297,19 @@ def sync(dry_run: bool = False) -> dict:
         )
 
     aliases = load_aliases()
-    current = load_json(
-        DATA_PATH,
-        {
-            "league_name": "Liga Biwenger",
-            "season": "2026-2027",
-            "pot_rules": DEFAULT_POT,
-            "jornadas": 38,
-            "players": [],
-        },
-    )
+    empty_state = {
+        "league_name": "Liga Biwenger",
+        "season": "2026-2027",
+        "pot_rules": DEFAULT_POT,
+        "jornadas": 38,
+        "players": [],
+    }
+    # Si data/liga.json falta o está vacío, cae a la copia pública antes de
+    # tratar a todos los managers como nuevos (evita perder aliases curados).
+    if DATA_PATH.exists():
+        current = load_json(DATA_PATH, empty_state)
+    else:
+        current = load_json(WEB_DATA_PATH, empty_state)
 
     print("Autenticando en Biwenger…")
     token = login(email, password)

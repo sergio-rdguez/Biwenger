@@ -23,6 +23,11 @@ if hasattr(sys.stdout, "reconfigure"):
         pass
 
 
+# Rutas que nunca deben servirse por HTTP aunque cuelguen de ROOT
+# (credenciales, control de versiones, hoja de origen).
+BLOCKED_PREFIXES = (".env", ".git", "Biwenger_2026.xlsx")
+
+
 class Handler(SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, directory=str(ROOT), **kwargs)
@@ -33,6 +38,25 @@ class Handler(SimpleHTTPRequestHandler):
 
     def log_message(self, fmt, *args):
         print(f"[web] {self.address_string()} - {fmt % args}")
+
+    def _is_blocked(self) -> bool:
+        segments = [s for s in urlparse(self.path).path.split("/") if s]
+        if not segments:
+            return False
+        # Bloquea dotfiles/dotdirs en cualquier nivel (.env, .git/…) y archivos concretos.
+        return any(seg.startswith(".") for seg in segments) or segments[0] in BLOCKED_PREFIXES
+
+    def do_GET(self) -> None:
+        if self._is_blocked():
+            self.send_error(403, "Forbidden")
+            return
+        super().do_GET()
+
+    def do_HEAD(self) -> None:
+        if self._is_blocked():
+            self.send_error(403, "Forbidden")
+            return
+        super().do_HEAD()
 
     def _json(self, code: int, payload: dict) -> None:
         body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
@@ -92,11 +116,21 @@ class Handler(SimpleHTTPRequestHandler):
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--port", type=int, default=8765)
+    parser.add_argument(
+        "--host",
+        default="127.0.0.1",
+        help="Interfaz donde escuchar. Por defecto solo localhost: /api/sync "
+        "dispara un login real en Biwenger sin autenticación propia, así que "
+        "abrirlo a la red (0.0.0.0) expone esa acción a cualquiera en tu WiFi.",
+    )
     args = parser.parse_args()
+
+    if args.host not in ("127.0.0.1", "localhost", "::1"):
+        print(f"⚠ Escuchando en {args.host}: /api/sync quedará accesible para toda la red.")
 
     # Evita "Address already in use" al reiniciar en Windows
     ThreadingHTTPServer.allow_reuse_address = True
-    with ThreadingHTTPServer(("", args.port), functools.partial(Handler)) as httpd:
+    with ThreadingHTTPServer((args.host, args.port), functools.partial(Handler)) as httpd:
         print(f"BOTE listo en http://127.0.0.1:{args.port}/web/")
         print(f"Sync API  POST http://127.0.0.1:{args.port}/api/sync")
         print("Ctrl+C para parar")

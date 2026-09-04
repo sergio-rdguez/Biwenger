@@ -559,9 +559,25 @@ function rowPassesFilters(row, state, columns) {
 }
 
 function closeAllFilterMenus(except) {
-  document.querySelectorAll(".col-filter.open").forEach((el) => {
-    if (el !== except) el.classList.remove("open");
+  document.querySelectorAll(".col-filter").forEach((el) => {
+    if (el === except) return;
+    el.setAttribute("hidden", "");
+    el.classList.remove("open");
+    el.parentElement?.classList.remove("open");
   });
+}
+
+/** Coloca un menú de filtro (position:fixed) bajo su botón, evitando que se
+ * salga de la ventana ni se recorte por el scroll de la tabla. */
+function positionFilterMenu(btn, menu) {
+  const rect = btn.getBoundingClientRect();
+  const maxWidth = Math.min(280, window.innerWidth * 0.9);
+  let left = rect.left;
+  if (left + maxWidth > window.innerWidth - 8) {
+    left = Math.max(8, window.innerWidth - maxWidth - 8);
+  }
+  menu.style.left = `${left}px`;
+  menu.style.top = `${rect.bottom + 4}px`;
 }
 
 function bindColumnFilters(headId, columns, rows, stateKey, onApply) {
@@ -610,13 +626,11 @@ function bindColumnFilters(headId, columns, rows, stateKey, onApply) {
       const menu = btn.parentElement.querySelector(".col-filter");
       const opening = menu.hasAttribute("hidden");
       closeAllFilterMenus();
-      document.querySelectorAll(".col-filter").forEach((m) => m.setAttribute("hidden", ""));
       if (opening) {
+        positionFilterMenu(btn, menu);
         menu.removeAttribute("hidden");
         menu.classList.add("open");
         btn.parentElement.classList.add("open");
-      } else {
-        btn.parentElement.classList.remove("open");
       }
     });
   });
@@ -900,14 +914,9 @@ function renderMovimientos(data) {
       btn.addEventListener("click", (e) => {
         e.stopPropagation();
         const opening = menu.hasAttribute("hidden");
-        document.querySelectorAll(".col-filter").forEach((m) => {
-          m.setAttribute("hidden", "");
-          m.classList.remove("open");
-        });
-        document.querySelectorAll(".col-filter-th.open, .mov-filter.open").forEach((el) => {
-          el.classList.remove("open");
-        });
+        closeAllFilterMenus();
         if (opening) {
+          positionFilterMenu(btn, menu);
           menu.removeAttribute("hidden");
           menu.classList.add("open");
           wrap.classList.add("open");
@@ -1362,9 +1371,15 @@ async function syncFromBiwenger() {
   }
 }
 
+function revealApp() {
+  document.getElementById("bootLoader")?.setAttribute("hidden", "");
+  document.getElementById("app")?.removeAttribute("hidden");
+}
+
 async function boot() {
   setupNav();
   applyData(await loadLiga());
+  revealApp();
 
   const btn = document.getElementById("btnSync");
   const status = document.getElementById("syncStatus");
@@ -1397,18 +1412,16 @@ async function boot() {
     filterState.mov = {};
     renderMovimientos(enrich(window.__ligaRaw));
   });
-  document.addEventListener("click", () => {
-    document.querySelectorAll(".col-filter").forEach((m) => {
-      m.setAttribute("hidden", "");
-      m.classList.remove("open");
-    });
-    document.querySelectorAll(".col-filter-th.open, .mov-filter.open").forEach((el) => {
-      el.classList.remove("open");
-    });
+  document.addEventListener("click", () => closeAllFilterMenus());
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") closeAllFilterMenus();
   });
+  window.addEventListener("scroll", () => closeAllFilterMenus(), true);
+  window.addEventListener("resize", () => closeAllFilterMenus());
 }
 
 boot().catch((err) => {
+  revealApp();
   document.querySelector("main").innerHTML = `<section class="panel"><p>Error: ${escapeHtml(
     err.message
   )}. Arranca con <code>python serve.py</code>.</p></section>`;
