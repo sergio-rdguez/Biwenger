@@ -8,9 +8,18 @@ on:
 
 permissions:
   contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
 
 jobs:
   sync:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -41,7 +50,16 @@ jobs:
             git push
           fi
 
-      # El deploy a Pages lo hace pages.yml, disparado por el push anterior.
-      # Antes este job también desplegaba aquí, duplicando el deploy (y
-      # compitiendo con pages.yml por el mismo grupo de concurrencia), lo
-      # que gastaba el doble de minutos de Actions cada día para nada.
+      # El push con GITHUB_TOKEN no dispara pages.yml (limitación de GitHub),
+      # así que desplegamos aquí tras el sync diario.
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload site
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: web
+
+      - name: Deploy
+        id: deployment
+        uses: actions/deploy-pages@v4
