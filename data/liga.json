@@ -11,7 +11,7 @@
   "last_place": 12,
   "active_managers": 12,
   "jornadas": 38,
-  "updated_at": "2026-09-08T08:26:12.215095+00:00",
+  "updated_at": "2026-09-08T10:15:47.281500+00:00",
   "source": "biwenger-sync",
   "previous_season": {
     "season": "2025-2026",
@@ -151,7 +151,7 @@
       "season_position": 1,
       "icon": "i/u/1184540.png",
       "position_inc": 1,
-      "last_access": 1788841437,
+      "last_access": 1788856916,
       "team_size": 16,
       "formation": "3-4-3",
       "lineup_counting": true,
@@ -2053,17 +2053,17 @@
         }
       },
       "points": 155,
-      "team_value": 58580000,
-      "team_value_inc": -160000,
+      "team_value": 41270000,
+      "team_value_inc": 160000,
       "season_position": 3,
       "icon": "i/u/9959771.png?v=4",
       "position_inc": -2,
-      "last_access": 1788819710,
-      "team_size": 13,
+      "last_access": 1788857192,
+      "team_size": 9,
       "formation": "3-5-2",
       "lineup_counting": true,
-      "balance": -2825890,
-      "max_bid": 11819110,
+      "balance": 14618610,
+      "max_bid": 24936110,
       "lineup": {
         "formation": "3-5-2",
         "counting": true,
@@ -2206,30 +2206,6 @@
           "on_bench": false
         },
         {
-          "id": 41263,
-          "name": "Hernando",
-          "position_label": "DF",
-          "team": "Racing",
-          "points": 15,
-          "points_last": 1,
-          "price": 1640000,
-          "clause": 2460000,
-          "in_xi": true,
-          "on_bench": false
-        },
-        {
-          "id": 37499,
-          "name": "Trent",
-          "position_label": "DF",
-          "team": "Real Madrid",
-          "points": 12,
-          "points_last": 0,
-          "price": 2860000,
-          "clause": 4290000,
-          "in_xi": true,
-          "on_bench": false
-        },
-        {
           "id": 30477,
           "name": "Bellingham",
           "position_label": "MC",
@@ -2238,18 +2214,6 @@
           "points_last": 4,
           "price": 17950000,
           "clause": 19745000,
-          "in_xi": true,
-          "on_bench": false
-        },
-        {
-          "id": 37717,
-          "name": "Marc Aguado",
-          "position_label": "MC",
-          "team": "Elche",
-          "points": 17,
-          "points_last": null,
-          "price": 2690000,
-          "clause": 5035000,
           "in_xi": true,
           "on_bench": false
         },
@@ -2298,18 +2262,6 @@
           "points_last": 6,
           "price": 3170000,
           "clause": 4755000,
-          "in_xi": true,
-          "on_bench": false
-        },
-        {
-          "id": 38962,
-          "name": "Mikautadze",
-          "position_label": "DL",
-          "team": "Villarreal",
-          "points": 20,
-          "points_last": 3,
-          "price": 10120000,
-          "clause": 12792000,
           "in_xi": true,
           "on_bench": false
         },
@@ -8209,7 +8161,7 @@
       "season_position": 10,
       "icon": "i/u/11679631.png?v=15",
       "position_inc": null,
-      "last_access": 1788844137,
+      "last_access": 1788856471,
       "team_size": 12,
       "formation": "4-3-3",
       "lineup_counting": true,
@@ -9077,7 +9029,7 @@
       "season_position": 11,
       "icon": "i/u/7791198.png?v=9",
       "position_inc": null,
-      "last_access": 1788847085,
+      "last_access": 1788856688,
       "team_size": 19,
       "formation": "4-4-2",
       "lineup_counting": true,
@@ -10949,7 +10901,7 @@
       "position_inc": 1,
       "icon": "i/u/1184540.png",
       "team_size": 16,
-      "last_access": 1788841437,
+      "last_access": 1788856916,
       "formation": "3-4-3",
       "lineup_counting": true
     },
@@ -10972,12 +10924,12 @@
       "biwenger_name": "Ted Lasso 🥸",
       "position": 3,
       "points": 155,
-      "team_value": 58580000,
-      "team_value_inc": -160000,
+      "team_value": 41270000,
+      "team_value_inc": 160000,
       "position_inc": -2,
       "icon": "i/u/9959771.png?v=4",
-      "team_size": 13,
-      "last_access": 1788819710,
+      "team_size": 9,
+      "last_access": 1788857192,
       "formation": "3-5-2",
       "lineup_counting": true
     },
@@ -11075,7 +11027,7 @@
       "position_inc": null,
       "icon": "i/u/11679631.png?v=15",
       "team_size": 12,
-      "last_access": 1788844137,
+      "last_access": 1788856471,
       "formation": "4-3-3",
       "lineup_counting": true
     },
@@ -11089,7 +11041,7 @@
       "position_inc": null,
       "icon": "i/u/7791198.png?v=9",
       "team_size": 19,
-      "last_access": 1788847085,
+      "last_access": 1788856688,
       "formation": "4-4-2",
       "lineup_counting": true
     },
@@ -11967,28 +11919,16 @@
         "points_last": 4
       },
       {
-        "player_id": 37499,
-        "price": 14550000,
-        "date": 1788806491,
-        "until": 1788979291,
+        "player_id": 33447,
+        "price": 3920000,
+        "date": 1788856883,
+        "until": 1789029683,
         "seller": "Ted Lasso 🥸",
         "seller_id": 9959771,
-        "player": "Trent",
+        "player": "Jon Martín",
         "position_label": "DF",
-        "team": "Real Madrid",
-        "points_last": 0
-      },
-      {
-        "player_id": 37717,
-        "price": 13650000,
-        "date": 1788806491,
-        "until": 1788979291,
-        "seller": "Ted Lasso 🥸",
-        "seller_id": 9959771,
-        "player": "Marc Aguado",
-        "position_label": "MC",
-        "team": "Elche",
-        "points_last": null
+        "team": "Real Sociedad",
+        "points_last": -7
       },
       {
         "player_id": 38290,
@@ -12015,18 +11955,6 @@
         "points_last": 1
       },
       {
-        "player_id": 38962,
-        "price": 51700000,
-        "date": 1788806491,
-        "until": 1788979291,
-        "seller": "Ted Lasso 🥸",
-        "seller_id": 9959771,
-        "player": "Mikautadze",
-        "position_label": "DL",
-        "team": "Villarreal",
-        "points_last": 3
-      },
-      {
         "player_id": 40911,
         "price": 15450000,
         "date": 1788806491,
@@ -12037,18 +11965,6 @@
         "position_label": "DL",
         "team": "Deportivo",
         "points_last": 6
-      },
-      {
-        "player_id": 41263,
-        "price": 8250000,
-        "date": 1788806491,
-        "until": 1788979291,
-        "seller": "Ted Lasso 🥸",
-        "seller_id": 9959771,
-        "player": "Hernando",
-        "position_label": "DF",
-        "team": "Racing",
-        "points_last": 1
       },
       {
         "player_id": 1249,
@@ -12709,17 +12625,10 @@
       },
       {
         "type": "purchase",
-        "amount": 1624100,
-        "until": 1789016400,
-        "player_id": 41263,
-        "from_id": null
-      },
-      {
-        "type": "purchase",
-        "amount": 10251500,
-        "until": 1789016400,
-        "player_id": 38962,
-        "from_id": null
+        "amount": 3000500,
+        "until": 1788930000,
+        "player_id": 1676,
+        "from_id": 9959771
       },
       {
         "type": "purchase",
@@ -12730,16 +12639,16 @@
       },
       {
         "type": "purchase",
-        "amount": 3148000,
-        "until": 1789016400,
-        "player_id": 25403,
-        "from_id": null
+        "amount": 3100000,
+        "until": 1788930000,
+        "player_id": 21132,
+        "from_id": 9959771
       },
       {
         "type": "purchase",
-        "amount": 2790200,
+        "amount": 3148000,
         "until": 1789016400,
-        "player_id": 37499,
+        "player_id": 25403,
         "from_id": null
       },
       {
@@ -12765,6 +12674,27 @@
       },
       {
         "type": "purchase",
+        "amount": 2000000,
+        "until": 1788930000,
+        "player_id": 31321,
+        "from_id": 9959771
+      },
+      {
+        "type": "purchase",
+        "amount": 2800000,
+        "until": 1788930000,
+        "player_id": 41083,
+        "from_id": 9959771
+      },
+      {
+        "type": "purchase",
+        "amount": 1650000,
+        "until": 1788930000,
+        "player_id": 8695,
+        "from_id": 9959771
+      },
+      {
+        "type": "purchase",
         "amount": 1391800,
         "until": 1789016400,
         "player_id": 9065,
@@ -12772,10 +12702,10 @@
       },
       {
         "type": "purchase",
-        "amount": 2778700,
-        "until": 1789016400,
-        "player_id": 37717,
-        "from_id": null
+        "amount": 2110000,
+        "until": 1788930000,
+        "player_id": 26131,
+        "from_id": 9959771
       },
       {
         "type": "purchase",
@@ -12785,11 +12715,63 @@
         "from_id": null
       }
     ],
-    "viewer_balance": -2825890,
-    "viewer_max_bid": 11819110
+    "viewer_balance": 14618610,
+    "viewer_max_bid": 10275610
   },
   "activity": {
     "transfers": [
+      {
+        "date": 1788856862,
+        "player_id": 37717,
+        "amount": 2778700,
+        "from": "Ted Lasso 🥸",
+        "from_id": 9959771,
+        "to": null,
+        "to_id": null,
+        "kind": "clausulazo",
+        "player": "Marc Aguado",
+        "position_label": "MC",
+        "team": "Elche"
+      },
+      {
+        "date": 1788856862,
+        "player_id": 38962,
+        "amount": 10251500,
+        "from": "Ted Lasso 🥸",
+        "from_id": 9959771,
+        "to": null,
+        "to_id": null,
+        "kind": "clausulazo",
+        "player": "Mikautadze",
+        "position_label": "DL",
+        "team": "Villarreal"
+      },
+      {
+        "date": 1788856862,
+        "player_id": 37499,
+        "amount": 2790200,
+        "from": "Ted Lasso 🥸",
+        "from_id": 9959771,
+        "to": null,
+        "to_id": null,
+        "kind": "clausulazo",
+        "player": "Trent",
+        "position_label": "DF",
+        "team": "Real Madrid"
+      },
+      {
+        "date": 1788856862,
+        "player_id": 41263,
+        "amount": 1624100,
+        "from": "Ted Lasso 🥸",
+        "from_id": 9959771,
+        "to": null,
+        "to_id": null,
+        "kind": "clausulazo",
+        "player": "Hernando",
+        "position_label": "DF",
+        "team": "Racing"
+      },
       {
         "date": 1788843892,
         "player_id": 2169,
@@ -13257,58 +13239,6 @@
         "player": "Jesús Vázquez",
         "position_label": "DF",
         "team": "Valencia"
-      },
-      {
-        "date": 1788218725,
-        "player_id": 37898,
-        "amount": 712400,
-        "from": "Mr Pressing",
-        "from_id": 12795318,
-        "to": null,
-        "to_id": null,
-        "kind": "clausulazo",
-        "player": "Rincón",
-        "position_label": "DF",
-        "team": "Athletic"
-      },
-      {
-        "date": 1788212650,
-        "player_id": 42557,
-        "amount": 8345400,
-        "from": "Club de Ajedrez",
-        "from_id": 12784923,
-        "to": null,
-        "to_id": null,
-        "kind": "clausulazo",
-        "player": "Adeyemi",
-        "position_label": "DL",
-        "team": "Barcelona"
-      },
-      {
-        "date": 1788209077,
-        "player_id": 31989,
-        "amount": 2273200,
-        "from": "Luis Enrique",
-        "from_id": 7789246,
-        "to": null,
-        "to_id": null,
-        "kind": "clausulazo",
-        "player": "Adrià Altimira",
-        "position_label": "DF",
-        "team": "Deportivo"
-      },
-      {
-        "date": 1788207072,
-        "player_id": 17756,
-        "amount": 7110000,
-        "from": "Club de Ajedrez",
-        "from_id": 12784923,
-        "to": "Nachota",
-        "to_id": 1184544,
-        "kind": "transfer",
-        "player": "Camello",
-        "position_label": "DL",
-        "team": "Rayo Vallecano"
       }
     ],
     "market_deals": [
@@ -17797,7 +17727,7 @@
         4,
         5
       ],
-      "status": "injured",
+      "status": "doubt",
       "team": "Athletic",
       "team_id": 1
     },
@@ -19143,24 +19073,6 @@
       "status": "ok",
       "team": "Atlético",
       "team_id": 2
-    },
-    "42557": {
-      "id": 42557,
-      "name": "Adeyemi",
-      "position": 4,
-      "position_label": "DL",
-      "price": 8280000,
-      "points": 25,
-      "points_last": 5,
-      "fitness": [
-        5,
-        6,
-        4,
-        10
-      ],
-      "status": "ok",
-      "team": "Barcelona",
-      "team_id": 3
     },
     "42605": {
       "id": 42605,
