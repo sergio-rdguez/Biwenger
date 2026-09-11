@@ -411,7 +411,11 @@ def sync(dry_run: bool = False) -> dict:
                 round_id=meta["round_id"],
             )
 
-    # 2) Clasificación de temporada + lastPositions (rellena huecos)
+    # 2) Clasificación de temporada (standings).
+    # No usar standings[].lastPositions para el ranking de jornada:
+    # el índice no es fiable cuando hay jornadas fuera de orden (p.ej. J6
+    # cerrada antes que J5) y sobrescribía el orden correcto del tablón
+    # (roundFinished.results, ya ordenado por puntos).
     for row in standings:
         remote_name = (row.get("name") or "").strip()
         web_name = normalize_name(remote_name, aliases)
@@ -437,26 +441,6 @@ def sync(dry_run: bool = False) -> dict:
         lineup = live.get("lineup") if isinstance(live.get("lineup"), dict) else {}
         player["formation"] = lineup.get("type")
         player["lineup_counting"] = lineup.get("count")
-
-        for idx, pos in enumerate(row.get("lastPositions") or []):
-            jornada = idx + 1
-            existing = player["rounds"].get(str(jornada))
-            if existing and existing.get("status") == "final":
-                # lastPositions es la posición explícita de Biwenger. Conserva
-                # puntos/premio del tablón, pero úsala frente al orden inferido.
-                set_round(
-                    player,
-                    jornada,
-                    int(pos),
-                    "final",
-                    existing.get("points"),
-                    bonus=existing.get("bonus"),
-                    bonus_reason=existing.get("bonus_reason"),
-                    round_id=existing.get("round_id"),
-                )
-                continue
-            status = "final" if jornada in finished_nums else "provisional"
-            set_round(player, jornada, int(pos), status, existing.get("points") if existing else None)
 
         classification.append(
             {

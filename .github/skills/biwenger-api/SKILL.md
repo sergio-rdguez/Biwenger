@@ -51,13 +51,16 @@ se calcula sumando `fitness[0]` (jornada activa) de cada titular del once.
 
 `postponed_rounds` lista aplazadas pendientes (p.ej. «Jornada 1 (aplazada)»).
 
-`lastPositions[i]` ≈ puesto jornada `i+1`. El `round.id` actual se mapea a número vía `roundStarted`/`roundFinished` (`name`: "Jornada N").
+El `round.id` actual se mapea a número vía `roundStarted`/`roundFinished` (`name`: "Jornada N").
+
+`standings[].lastPositions` **no** se usa para el ranking de jornada: el índice
+`i → jornada i+1` falla cuando Biwenger cierra jornadas fuera de orden (p.ej. J6
+antes que J5) y corrompe puestos/bote. Fuente de verdad = tablón.
 
 Para jornadas cerradas:
 
-- Usa `roundFinished.results` para puntos, premio (`bonus`) y motivo.
-- Usa `standings[].lastPositions` como posición explícita; el evento final no
-  siempre incluye `position`.
+- Usa `roundFinished.results` para puntos, premio (`bonus`) y puesto (ordenar por
+  puntos; el evento suele no traer `position` explícita).
 - Conserva `round_id`, `started_at` y `finished_at` en `rounds_meta`.
 
 ## Aliases

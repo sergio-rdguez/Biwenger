@@ -346,7 +346,12 @@ function renderJornadaInto(data, jornada, targetId, { expandable = false } = {})
       };
     })
     .filter(Boolean)
-    .sort((a, b) => a.pos - b.pos);
+    .sort((a, b) => {
+      const pa = a.points;
+      const pb = b.points;
+      if (pa != null && pb != null && pa !== pb) return pb - pa;
+      return a.pos - b.pos;
+    });
 
   if (!rows.length) {
     list.innerHTML =
