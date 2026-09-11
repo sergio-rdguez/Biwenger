@@ -81,7 +81,8 @@ current_jornada, current_round_status, rounds_meta
 classification[]  # puesto, pts, team_value, …
 market { sales[], offers[], viewer_balance, viewer_max_bid }
 activity { transfers[], market_deals[], clause_increments[] }
-fixtures[]  # partidos + dificultad (bettingPool)
+fixtures[]  # partidos de la jornada actual (atajo)
+fixtures_by_round { "N": [partidos...] }  # resultados/calendario por jornada
 players_index { id: {name, team, position_label, points_last, …} }
 players[]:
   name, positions, rounds{ j: {position,status,points,bonus,round_id} }

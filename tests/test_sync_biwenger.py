@@ -2,12 +2,16 @@ import unittest
 
 from sync_biwenger import (
     board_rounds,
+    is_mirrored_gameweek_points,
     is_mirrored_prematch,
     rank_results,
     set_round,
 )
-from biwenger_feed import lineup_gameweek_points
-
+from biwenger_feed import (
+    assign_game_to_jornada,
+    build_fixtures_by_round,
+    lineup_gameweek_points,
+)
 
 class SyncBiwengerTests(unittest.TestCase):
     def test_board_rounds_keeps_dates_and_final_results(self):
@@ -116,6 +120,64 @@ class SyncBiwengerTests(unittest.TestCase):
             3,
         )
         self.assertIsNone(lineup_gameweek_points({"players": [3]}, catalog))
+
+    def test_fixtures_by_round_maps_games_to_jornada_windows(self):
+        board = [
+            {
+                "type": "bettingPool",
+                "date": 2000,
+                "content": {
+                    "pool": {
+                        "games": [
+                            {
+                                "id": 1,
+                                "date": 1100,
+                                "status": "finished",
+                                "home": {"name": "A", "score": 1},
+                                "away": {"name": "B", "score": 0},
+                            },
+                            {
+                                "id": 2,
+                                "date": 2100,
+                                "status": "preview",
+                                "home": {"name": "C", "score": None},
+                                "away": {"name": "D", "score": None},
+                            },
+                        ]
+                    }
+                },
+            }
+        ]
+        rounds_meta = {
+            "4": {"number": 4, "started_at": 1000, "finished_at": 1500},
+            "5": {"number": 5, "started_at": 2000, "finished_at": None},
+        }
+        by_round = build_fixtures_by_round(board, rounds_meta)
+        self.assertEqual(len(by_round["4"]), 1)
+        self.assertEqual(by_round["4"][0]["home"], "A")
+        self.assertEqual(by_round["4"][0]["home_score"], 1)
+        self.assertEqual(len(by_round["5"]), 1)
+        self.assertEqual(by_round["5"][0]["home"], "C")
+        self.assertEqual(
+            assign_game_to_jornada(1100, [{"number": 4, "start": 1000, "end": 1500}]),
+            4,
+        )
+
+    def test_mirrored_gameweek_points_detects_prematch(self):
+        players = {
+            "A": {"rounds": {"4": {"status": "final", "points": 37}}},
+            "B": {"rounds": {"4": {"status": "final", "points": 20}}},
+        }
+        self.assertTrue(
+            is_mirrored_gameweek_points(
+                [("A", 37), ("B", 20)], players, 4, {4}
+            )
+        )
+        self.assertFalse(
+            is_mirrored_gameweek_points(
+                [("A", 10), ("B", 20)], players, 4, {4}
+            )
+        )
 
 
 if __name__ == "__main__":

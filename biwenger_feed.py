@@ -62,6 +62,7 @@ def fetch_competition_meta(session: requests.Session) -> dict:
         "season_rounds": season.get("rounds") or [],
         "players": data.get("players") or {},
         "teams": {str(k): v for k, v in (data.get("teams") or {}).items()},
+        "active_events": data.get("activeEvents") or [],
     }
 
 
@@ -188,6 +189,164 @@ def collect_ids(*groups) -> set[int]:
     return ids
 
 
+def _game_from_pool_row(game: dict) -> dict | None:
+    gid = game.get("id")
+    if gid is None:
+        return None
+    home = game.get("home") or {}
+    away = game.get("away") or {}
+    return {
+        "id": gid,
+        "date": game.get("date"),
+        "status": game.get("status"),
+        "home": home.get("name"),
+        "away": away.get("name"),
+        "home_score": home.get("score"),
+        "away_score": away.get("score"),
+        "home_difficulty": (home.get("difficulty") or {}).get("rating"),
+        "away_difficulty": (away.get("difficulty") or {}).get("rating"),
+    }
+
+
+def _prefer_game(prev: dict | None, cand: dict) -> dict:
+    if not prev:
+        return cand
+    if prev.get("status") != "finished" and cand.get("status") == "finished":
+        return cand
+    if prev.get("home_score") is None and cand.get("home_score") is not None:
+        return cand
+    # Keep richer difficulty when scores already present
+    if cand.get("home_difficulty") is not None and prev.get("home_difficulty") is None:
+        merged = dict(prev)
+        merged["home_difficulty"] = cand.get("home_difficulty")
+        merged["away_difficulty"] = cand.get("away_difficulty")
+        return merged
+    return prev
+
+
+def collect_board_games(board: list[dict], *, min_event_date: int | None = None) -> dict[int, dict]:
+    """Deduped match rows from bettingPool board events (id -> game)."""
+    games: dict[int, dict] = {}
+    for event in board:
+        if event.get("type") != "bettingPool":
+            continue
+        if min_event_date is not None and (event.get("date") or 0) < min_event_date:
+            continue
+        content = event.get("content")
+        if not isinstance(content, dict):
+            continue
+        pool = content.get("pool") or {}
+        for row in pool.get("games") or []:
+            cand = _game_from_pool_row(row)
+            if not cand:
+                continue
+            gid = int(cand["id"])
+            games[gid] = _prefer_game(games.get(gid), cand)
+    return games
+
+
+def collect_active_event_games(active_events: list[dict] | None) -> dict[int, dict]:
+    games: dict[int, dict] = {}
+    for ev in active_events or []:
+        for row in ev.get("games") or []:
+            cand = _game_from_pool_row(row)
+            if not cand:
+                continue
+            gid = int(cand["id"])
+            games[gid] = _prefer_game(games.get(gid), cand)
+    return games
+
+
+def _extract_round_number(name: str | None) -> int | None:
+    if not isinstance(name, str):
+        return None
+    m = re.search(r"(\d+)", name)
+    return int(m.group(1)) if m else None
+
+
+def build_fixture_windows(
+    rounds_meta: dict,
+    active_events: list[dict] | None = None,
+) -> list[dict]:
+    """Time windows used to assign matches to jornada numbers."""
+    windows: list[dict] = []
+    for key, meta in (rounds_meta or {}).items():
+        start = meta.get("started_at")
+        if start is None:
+            continue
+        end = meta.get("finished_at")
+        windows.append(
+            {
+                "number": int(meta.get("number") or key),
+                "start": int(start),
+                "end": int(end) if end is not None else int(start) + 8 * 86400,
+            }
+        )
+    known = {w["number"] for w in windows}
+    for ev in active_events or []:
+        if ev.get("type") and ev.get("type") != "round":
+            continue
+        num = _extract_round_number(ev.get("name") or ev.get("short"))
+        if num is None or num in known:
+            continue
+        start = ev.get("start") or ev.get("date")
+        if start is None:
+            continue
+        end = ev.get("end") or start
+        windows.append(
+            {
+                "number": num,
+                "start": int(start),
+                "end": int(end) + 7 * 86400,
+            }
+        )
+        known.add(num)
+    windows.sort(key=lambda w: w["start"])
+    return windows
+
+
+def assign_game_to_jornada(game_date: int | None, windows: list[dict]) -> int | None:
+    if game_date is None or not windows:
+        return None
+    hits = [w for w in windows if w["start"] <= game_date <= w["end"]]
+    if len(hits) == 1:
+        return hits[0]["number"]
+    if len(hits) > 1:
+        hits.sort(key=lambda w: w["end"] - w["start"])
+        return hits[0]["number"]
+    prev = [w for w in windows if w["start"] <= game_date]
+    if prev:
+        return prev[-1]["number"]
+    return windows[0]["number"]
+
+
+def build_fixtures_by_round(
+    board: list[dict],
+    rounds_meta: dict,
+    *,
+    active_events: list[dict] | None = None,
+    min_event_date: int | None = None,
+) -> dict[str, list[dict]]:
+    """Group La Liga matches by jornada using board pools + activeEvents."""
+    games = collect_board_games(board, min_event_date=min_event_date)
+    for gid, game in collect_active_event_games(active_events).items():
+        games[gid] = _prefer_game(games.get(gid), game)
+
+    windows = build_fixture_windows(rounds_meta, active_events)
+    by_round: dict[str, list[dict]] = {}
+    for game in games.values():
+        jornada = assign_game_to_jornada(game.get("date"), windows)
+        if jornada is None:
+            continue
+        row = dict(game)
+        row["jornada"] = jornada
+        by_round.setdefault(str(jornada), []).append(row)
+
+    for key in by_round:
+        by_round[key].sort(key=lambda g: (g.get("date") or 0, g.get("id") or 0))
+    return by_round
+
+
 def parse_board_activity(board: list[dict], limit: int = 40) -> dict:
     transfers: list[dict] = []
     market_deals: list[dict] = []
@@ -199,24 +358,13 @@ def parse_board_activity(board: list[dict], limit: int = 40) -> dict:
         content = event.get("content")
         date = event.get("date")
 
+        # Legacy: first (newest) bettingPool only — callers prefer fixtures_by_round.
         if typ == "bettingPool" and isinstance(content, dict) and not fixtures:
             pool = content.get("pool") or {}
             for game in pool.get("games") or []:
-                home = game.get("home") or {}
-                away = game.get("away") or {}
-                fixtures.append(
-                    {
-                        "id": game.get("id"),
-                        "date": game.get("date"),
-                        "status": game.get("status"),
-                        "home": home.get("name"),
-                        "away": away.get("name"),
-                        "home_score": home.get("score"),
-                        "away_score": away.get("score"),
-                        "home_difficulty": (home.get("difficulty") or {}).get("rating"),
-                        "away_difficulty": (away.get("difficulty") or {}).get("rating"),
-                    }
-                )
+                row = _game_from_pool_row(game)
+                if row:
+                    fixtures.append(row)
 
         if not isinstance(content, list):
             continue

@@ -444,12 +444,26 @@ function renderLineupDetail(lineup) {
   </div>`;
 }
 
-function renderFixtures(data, targetId) {
+function fixturesForJornada(data, jornada) {
+  const byRound = data.fixtures_by_round || {};
+  if (jornada != null && byRound[String(jornada)]?.length) {
+    return byRound[String(jornada)];
+  }
+  if (jornada != null && jornada === data.current_jornada) {
+    return data.fixtures || [];
+  }
+  return byRound[String(jornada)] || [];
+}
+
+function renderFixtures(data, targetId, jornada) {
   const el = document.getElementById(targetId);
   if (!el) return;
-  const fixtures = data.fixtures || [];
+  const fixtures = fixturesForJornada(data, jornada);
   if (!fixtures.length) {
-    el.innerHTML = "";
+    el.innerHTML =
+      jornada != null
+        ? `<p class="hint">Sin partidos guardados para la jornada ${jornada}.</p>`
+        : "";
     return;
   }
   el.innerHTML = fixtures
@@ -522,7 +536,7 @@ function renderJornadaTab(data) {
           : "Puntos de esta jornada (como la columna «Jor.» de Biwenger).") +
       postponeNote +
       xiNote;
-    renderFixtures(data, "jornadaFixtures");
+    renderFixtures(data, "jornadaFixtures", j);
     renderJornadaInto(data, j, "jornadaList", { expandable: true });
   };
   select.onchange = paint;

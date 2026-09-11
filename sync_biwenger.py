@@ -43,6 +43,7 @@ BOARD_URL = "https://biwenger.as.com/api/v2/league/{league_id}/board"
 
 from biwenger_feed import (
     active_season_round,
+    build_fixtures_by_round,
     enrich_league_feed,
     fetch_competition_meta,
     lineup_gameweek_points,
@@ -288,6 +289,27 @@ def is_mirrored_prematch(
     return True
 
 
+def is_mirrored_gameweek_points(
+    gw_rows: list[tuple[str, int]],
+    players_by_name: dict[str, dict],
+    previous_jornada: int,
+    finished_jornadas: set[int],
+) -> bool:
+    """True when fitness[0] still equals the previous final jornada points."""
+    if not gw_rows or previous_jornada not in finished_jornadas:
+        return False
+    for name, points in gw_rows:
+        previous = (
+            players_by_name.get(name, {}).get("rounds", {}).get(str(previous_jornada))
+        )
+        if (
+            not previous
+            or previous.get("status") != "final"
+            or previous.get("points") != points
+        ):
+            return False
+    return True
+
 def sync(dry_run: bool = False) -> dict:
     email = os.getenv("BIWENGER_EMAIL") or os.getenv("BIWENGER_USERNAME")
     password = os.getenv("BIWENGER_PASSWORD")
@@ -359,6 +381,27 @@ def sync(dry_run: bool = False) -> dict:
     else:
         current_jornada = 1
         current_finished = False
+
+    # Si el live sigue anclado a una jornada ya cerrada, avanzar a la siguiente
+    # activa/pendiente del calendario (p.ej. J4 final → J5 prematch).
+    if current_finished:
+        nxt = active
+        if not nxt:
+            for row in season_rounds:
+                if row.get("part"):
+                    continue
+                if row.get("status") != "pending":
+                    continue
+                num = extract_jornada_number(row)
+                if num is None:
+                    continue
+                if num > current_jornada or num not in finished_nums:
+                    nxt = row
+                    break
+        if nxt and extract_jornada_number(nxt):
+            current_jornada = extract_jornada_number(nxt)
+            current_round_id = int(nxt["id"]) if nxt.get("id") is not None else None
+            current_finished = False
 
     live_status = "final" if current_finished else "provisional"
 
@@ -491,8 +534,11 @@ def sync(dry_run: bool = False) -> dict:
 
         mirrored = is_mirrored_prematch(live_rows, by_name, prev_j, finished_nums)
         has_gw_scores = len(gw_rows) > 0 and any(pts != 0 for _, pts in gw_rows)
+        gw_mirrored = is_mirrored_gameweek_points(
+            gw_rows, by_name, prev_j, finished_nums
+        )
 
-        if has_gw_scores:
+        if has_gw_scores and not gw_mirrored:
             status = "provisional"
             live_status = "provisional"
             ranked = sorted(gw_rows, key=lambda x: (-x[1], x[0].lower()))
@@ -513,7 +559,7 @@ def sync(dry_run: bool = False) -> dict:
                     round_id=current_round_id,
                     points_source="lineup_fitness",
                 )
-        elif mirrored:
+        elif mirrored or gw_mirrored:
             live_status = "prematch"
             print(
                 f"Jornada {current_jornada}: prematch (sin puntos nuevos aún; no suma al bote)"
@@ -578,6 +624,21 @@ def sync(dry_run: bool = False) -> dict:
         current_jornada=current_jornada,
     )
 
+    # Partidos por jornada (el tablón solo traía el último bettingPool = jornada siguiente)
+    season_starts = [
+        int(m["started_at"])
+        for m in rounds_by_id.values()
+        if m.get("started_at") is not None
+    ]
+    min_board_date = (min(season_starts) - 14 * 86400) if season_starts else None
+    fixtures_by_round = build_fixtures_by_round(
+        board,
+        rounds_meta,
+        active_events=competition.get("active_events") or [],
+        min_event_date=min_board_date,
+    )
+    fixtures = fixtures_by_round.get(str(current_jornada)) or feed.get("fixtures") or []
+
     # Reordenar tras enriquecer
     players = sorted(by_name.values(), key=lambda p: (p.get("season_position") or 999))
 
@@ -605,7 +666,8 @@ def sync(dry_run: bool = False) -> dict:
             "clause_increments": (feed.get("activity") or {}).get("clause_increments")
             or [],
         },
-        "fixtures": feed.get("fixtures") or [],
+        "fixtures": fixtures,
+        "fixtures_by_round": fixtures_by_round,
         "players_index": feed.get("players_index") or {},
         "postponed_rounds": postponed,
         "competition_rounds": [

@@ -27,7 +27,7 @@ description: >-
 
 ## Datos extra en `liga.json`
 
-`market` · `activity` · `fixtures` · `players_index` · `players[].lineup` · `players[].lineups_by_round` · `players[].roster` · `postponed_rounds`
+`market` · `activity` · `fixtures` · `fixtures_by_round` · `players_index` · `players[].lineup` · `players[].lineups_by_round` · `players[].roster` · `postponed_rounds`
 
 ## Datos / cálculo
 
