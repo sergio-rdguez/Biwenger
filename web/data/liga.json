@@ -11,7 +11,7 @@
   "last_place": 12,
   "active_managers": 12,
   "jornadas": 38,
-  "updated_at": "2026-09-18T10:13:39.475351+00:00",
+  "updated_at": "2026-09-18T11:00:00.798939+00:00",
   "source": "biwenger-sync",
   "previous_season": {
     "season": "2025-2026",
@@ -187,7 +187,7 @@
       "season_position": 1,
       "icon": "i/u/1184540.png",
       "position_inc": 1,
-      "last_access": 1789726136,
+      "last_access": 1789727750,
       "team_size": 16,
       "formation": "3-4-3",
       "lineup_counting": true,
@@ -481,7 +481,7 @@
           "points": 29,
           "points_last": 4,
           "price": 4020000,
-          "clause": 6647000,
+          "clause": 7847000,
           "in_xi": false,
           "on_bench": false
         }
@@ -2373,17 +2373,17 @@
         }
       },
       "points": 247,
-      "team_value": 44020000,
-      "team_value_inc": 110000,
+      "team_value": 43900000,
+      "team_value_inc": 70000,
       "season_position": 3,
       "icon": "i/u/9959771.png?v=4",
       "position_inc": null,
-      "last_access": 1789726216,
+      "last_access": 1789728525,
       "team_size": 10,
       "formation": "3-5-2",
       "lineup_counting": true,
-      "balance": 15762310,
-      "max_bid": 26767310,
+      "balance": 15412310,
+      "max_bid": 26387310,
       "lineup": {
         "formation": "3-5-2",
         "counting": true,
@@ -2569,14 +2569,26 @@
           "on_bench": false
         },
         {
-          "id": 1721,
-          "name": "Manu Sánchez",
-          "position_label": "DF",
-          "team": "Levante",
-          "points": 17,
+          "id": 43172,
+          "name": "Bouare",
+          "position_label": "MC",
+          "team": "Rayo Vallecano",
+          "points": 13,
           "points_last": 5,
-          "price": 1780000,
-          "clause": 2970000,
+          "price": 870000,
+          "clause": null,
+          "in_xi": false,
+          "on_bench": false
+        },
+        {
+          "id": 18916,
+          "name": "Gudelj",
+          "position_label": "MC",
+          "team": "Getafe",
+          "points": 8,
+          "points_last": 1,
+          "price": 1660000,
+          "clause": 2490000,
           "in_xi": false,
           "on_bench": false
         },
@@ -3405,12 +3417,12 @@
         }
       },
       "points": 246,
-      "team_value": 60200000,
-      "team_value_inc": 60000,
+      "team_value": 60320000,
+      "team_value_inc": 100000,
       "season_position": 4,
       "icon": "i/u/11679631.png?v=15",
       "position_inc": null,
-      "last_access": 1789722085,
+      "last_access": 1789728125,
       "team_size": 13,
       "formation": "4-3-3",
       "lineup_counting": true,
@@ -3601,6 +3613,18 @@
           "on_bench": false
         },
         {
+          "id": 1721,
+          "name": "Manu Sánchez",
+          "position_label": "DF",
+          "team": "Levante",
+          "points": 17,
+          "points_last": 5,
+          "price": 1780000,
+          "clause": 2715000,
+          "in_xi": false,
+          "on_bench": false
+        },
+        {
           "id": 42444,
           "name": "Hjulmand",
           "position_label": "MC",
@@ -3645,18 +3669,6 @@
           "points_last": 3,
           "price": 980000,
           "clause": 1982000,
-          "in_xi": false,
-          "on_bench": false
-        },
-        {
-          "id": 18916,
-          "name": "Gudelj",
-          "position_label": "MC",
-          "team": "Getafe",
-          "points": 8,
-          "points_last": 1,
-          "price": 1660000,
-          "clause": 2707950,
           "in_xi": false,
           "on_bench": false
         },
@@ -6589,7 +6601,7 @@
       "season_position": 7,
       "icon": "i/u/9959887.png?v=77",
       "position_inc": -2,
-      "last_access": 1789724229,
+      "last_access": 1789728302,
       "team_size": 15,
       "formation": "4-4-2",
       "lineup_counting": true,
@@ -7696,7 +7708,7 @@
       "season_position": 8,
       "icon": "i/u/12784923.png?v=91",
       "position_inc": null,
-      "last_access": 1789726025,
+      "last_access": 1789727323,
       "team_size": 15,
       "formation": "3-5-2",
       "lineup_counting": true,
@@ -7870,7 +7882,7 @@
           "points": 13,
           "points_last": 5,
           "price": 870000,
-          "clause": 1827000,
+          "clause": 0,
           "in_xi": true,
           "on_bench": false
         },
@@ -8789,7 +8801,7 @@
       "season_position": 9,
       "icon": "i/u/7789526.png?v=84",
       "position_inc": null,
-      "last_access": 1789721333,
+      "last_access": 1789726565,
       "team_size": 13,
       "formation": "4-4-2",
       "lineup_counting": true,
@@ -9862,7 +9874,7 @@
       "season_position": 10,
       "icon": null,
       "position_inc": -3,
-      "last_access": 1789722968,
+      "last_access": 1789726465,
       "team_size": 13,
       "formation": "4-5-1",
       "lineup_counting": true,
@@ -12051,7 +12063,7 @@
       "season_position": 12,
       "icon": "i/u/10100432.png",
       "position_inc": null,
-      "last_access": 1789724126,
+      "last_access": 1789727652,
       "team_size": 13,
       "formation": "4-4-2",
       "lineup_counting": true,
@@ -13023,7 +13035,7 @@
       "position_inc": 1,
       "icon": "i/u/1184540.png",
       "team_size": 16,
-      "last_access": 1789726136,
+      "last_access": 1789727750,
       "formation": "3-4-3",
       "lineup_counting": true
     },
@@ -13046,12 +13058,12 @@
       "biwenger_name": "Ted Lasso 🥸",
       "position": 3,
       "points": 247,
-      "team_value": 44020000,
-      "team_value_inc": 110000,
+      "team_value": 43900000,
+      "team_value_inc": 70000,
       "position_inc": null,
       "icon": "i/u/9959771.png?v=4",
       "team_size": 10,
-      "last_access": 1789726216,
+      "last_access": 1789728525,
       "formation": "3-5-2",
       "lineup_counting": true
     },
@@ -13060,12 +13072,12 @@
       "biwenger_name": "Clifford Yuma",
       "position": 4,
       "points": 246,
-      "team_value": 60200000,
-      "team_value_inc": 60000,
+      "team_value": 60320000,
+      "team_value_inc": 100000,
       "position_inc": null,
       "icon": "i/u/11679631.png?v=15",
       "team_size": 13,
-      "last_access": 1789722085,
+      "last_access": 1789728125,
       "formation": "4-3-3",
       "lineup_counting": true
     },
@@ -13107,7 +13119,7 @@
       "position_inc": -2,
       "icon": "i/u/9959887.png?v=77",
       "team_size": 15,
-      "last_access": 1789724229,
+      "last_access": 1789728302,
       "formation": "4-4-2",
       "lineup_counting": true
     },
@@ -13121,7 +13133,7 @@
       "position_inc": null,
       "icon": "i/u/12784923.png?v=91",
       "team_size": 15,
-      "last_access": 1789726025,
+      "last_access": 1789727323,
       "formation": "3-5-2",
       "lineup_counting": true
     },
@@ -13135,7 +13147,7 @@
       "position_inc": null,
       "icon": "i/u/7789526.png?v=84",
       "team_size": 13,
-      "last_access": 1789721333,
+      "last_access": 1789726565,
       "formation": "4-4-2",
       "lineup_counting": true
     },
@@ -13149,7 +13161,7 @@
       "position_inc": -3,
       "icon": null,
       "team_size": 13,
-      "last_access": 1789722968,
+      "last_access": 1789726465,
       "formation": "4-5-1",
       "lineup_counting": true
     },
@@ -13177,7 +13189,7 @@
       "position_inc": null,
       "icon": "i/u/10100432.png",
       "team_size": 13,
-      "last_access": 1789724126,
+      "last_access": 1789727652,
       "formation": "4-4-2",
       "lineup_counting": true
     }
@@ -13959,18 +13971,6 @@
         "points_last": 2
       },
       {
-        "player_id": 1721,
-        "price": 8900000,
-        "date": 1789715738,
-        "until": 1789888538,
-        "seller": "Ted Lasso 🥸",
-        "seller_id": 9959771,
-        "player": "Manu Sánchez",
-        "position_label": "DF",
-        "team": "Levante",
-        "points_last": 5
-      },
-      {
         "player_id": 2184,
         "price": 23050000,
         "date": 1789715738,
@@ -14631,18 +14631,6 @@
         "points_last": null
       },
       {
-        "player_id": 18916,
-        "price": 1992000,
-        "date": 1789709757,
-        "until": 1789882557,
-        "seller": "Clifford Yuma",
-        "seller_id": 11679631,
-        "player": "Gudelj",
-        "position_label": "MC",
-        "team": "Getafe",
-        "points_last": 1
-      },
-      {
         "player_id": 19577,
         "price": 29964000,
         "date": 1789709757,
@@ -14883,18 +14871,6 @@
         "points_last": 4
       },
       {
-        "player_id": 43172,
-        "price": 840000,
-        "date": 1789687603,
-        "until": 1789860403,
-        "seller": "Club de Ajedrez",
-        "seller_id": 12784923,
-        "player": "Bouare",
-        "position_label": "MC",
-        "team": "Rayo Vallecano",
-        "points_last": 5
-      },
-      {
         "player_id": 43259,
         "price": 1860000,
         "date": 1789687603,
@@ -14972,17 +14948,9 @@
       },
       {
         "type": "purchase",
-        "amount": 1750000,
-        "until": 1790331125,
-        "player_id": {
-          "id": 37726,
-          "owner": {
-            "clause": 2142000,
-            "date": 1787288637,
-            "price": 440000,
-            "clauseLockedUntil": 1789758000
-          }
-        },
+        "amount": 730000,
+        "until": 1789794000,
+        "player_id": 39673,
         "from_id": 9959771
       },
       {
@@ -15008,21 +14976,6 @@
       },
       {
         "type": "purchase",
-        "amount": 1250000,
-        "until": 1790331146,
-        "player_id": {
-          "id": 41565,
-          "owner": {
-            "clause": 1890000,
-            "date": 1789621366,
-            "price": 1050000,
-            "clauseLockedUntil": 1790485366
-          }
-        },
-        "from_id": 9959771
-      },
-      {
-        "type": "purchase",
         "amount": 4692200,
         "until": 1789880400,
         "player_id": 2184,
@@ -15030,59 +14983,14 @@
       },
       {
         "type": "purchase",
-        "amount": 2350000,
-        "until": 1790331049,
-        "player_id": {
-          "id": 30210,
-          "owner": {
-            "clause": 3165000,
-            "date": 1785762324,
-            "price": 0,
-            "clauseLockedUntil": 1789758000
-          }
-        },
-        "from_id": 9959771
-      },
-      {
-        "type": "purchase",
         "amount": 3891500,
         "until": 1789880400,
         "player_id": 38290,
         "from_id": null
-      },
-      {
-        "type": "purchase",
-        "amount": 3780000,
-        "until": 1790331102,
-        "player_id": {
-          "id": 3259,
-          "owner": {
-            "clause": 6836000,
-            "date": 1785762325,
-            "price": 0,
-            "clauseLockedUntil": 1789758000
-          }
-        },
-        "from_id": 9959771
-      },
-      {
-        "type": "purchase",
-        "amount": 1700000,
-        "until": 1790320578,
-        "player_id": {
-          "id": 32135,
-          "owner": {
-            "clause": 1998000,
-            "date": 1785762325,
-            "price": 0,
-            "clauseLockedUntil": 1789758000
-          }
-        },
-        "from_id": 9959771
       }
     ],
-    "viewer_balance": 15762310,
-    "viewer_max_bid": 15937310
+    "viewer_balance": 15412310,
+    "viewer_max_bid": 25657310
   },
   "activity": {
     "transfers": [
@@ -16275,6 +16183,28 @@
     ],
     "clause_increments": [
       {
+        "date": 1789727784,
+        "player_id": 24474,
+        "manager": "Bucaneros FC",
+        "manager_id": 1184540,
+        "amount": 400000,
+        "release_clause": 7447000,
+        "player": "Robert Navarro",
+        "position_label": "DL",
+        "team": "Athletic"
+      },
+      {
+        "date": 1789727784,
+        "player_id": 24474,
+        "manager": "Bucaneros FC",
+        "manager_id": 1184540,
+        "amount": 200000,
+        "release_clause": 7847000,
+        "player": "Robert Navarro",
+        "position_label": "DL",
+        "team": "Athletic"
+      },
+      {
         "date": 1789724024,
         "player_id": 19547,
         "manager": "PIZARRITA JIMÉNEZ",
@@ -16691,28 +16621,6 @@
         "player": "Espart",
         "position_label": "DF",
         "team": "Barcelona"
-      },
-      {
-        "date": 1788241611,
-        "player_id": 40075,
-        "manager": "Bucaneros FC",
-        "manager_id": 1184540,
-        "amount": 150000,
-        "release_clause": 5815000,
-        "player": "Espart",
-        "position_label": "DF",
-        "team": "Barcelona"
-      },
-      {
-        "date": 1788241611,
-        "player_id": 10292,
-        "manager": "Bucaneros FC",
-        "manager_id": 1184540,
-        "amount": 100000,
-        "release_clause": 3831740,
-        "player": "Arguibide",
-        "position_label": "DF",
-        "team": "Osasuna"
       }
     ]
   },

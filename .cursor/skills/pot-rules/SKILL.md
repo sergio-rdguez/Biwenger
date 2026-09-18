@@ -3,7 +3,7 @@ name: pot-rules
 description: >-
   Reglas del bote de la liga: aportaciones por posición, arrastre 2025-2026,
   métricas Últ/Prim/Pag y cómo se calculan en Excel legado vs web. Use when
-  changing pot fees, debts, season carryover, or bote calculations.
+  changing pot fees, debts, season carryover, bote calculations, or trade/clause fair-play rules.
 ---
 
 # Pot rules

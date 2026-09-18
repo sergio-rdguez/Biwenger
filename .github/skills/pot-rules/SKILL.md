@@ -3,7 +3,7 @@ name: pot-rules
 description: >-
   Reglas del bote de la liga: aportaciones por posición, arrastre 2025-2026,
   métricas Últ/Prim/Pag y cómo se calculan en Excel legado vs web. Use when
-  changing pot fees, debts, season carryover, or bote calculations.
+  changing pot fees, debts, season carryover, bote calculations, or trade/clause fair-play rules.
 ---
 
 # Pot rules
@@ -45,7 +45,8 @@ Documentadas en la pestaña **Reglas** (`web/app.js` → `renderReglas`):
 - Dinero en cláusulas: hasta 200 % del saldo invertido; no recuperable
 - Cesiones: sin porteros; min `max(0,5M; 10% VM)`; máx. 1 por jornada; bloqueadas en las últimas 8
 - Inicio: `40M − VM equipo aleatorio`; 50k €/punto; 3 clausulazos/día (hacer y recibir)
-- Fair play: juego individual; no subir cláusulas vía intercambios
+- Fair play: juego individual; sin pactos coordinados
+- Intercambios: el trueque con dinero es traspaso legítimo (desfase de VM no ilegal); antiabuso: la cláusula de cada jugador del trato debe mantenerse o bajar (no inflar cláusulas vía trueque)
 
 ## Al cambiar reglas
 

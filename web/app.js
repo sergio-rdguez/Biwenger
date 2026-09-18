@@ -1255,8 +1255,17 @@ function renderReglas(data) {
       <p>Es un juego <strong>individual</strong>. Cada manager compite por sí mismo: no se permiten pactos, estrategias de equipo ni cualquier movimiento acordado fuera del mercado limpio.</p>
       <ul class="rules-bullets">
         <li>Prohibidos los clausulazos, fichajes o maniobras coordinadas tras hablarlo con otro participante.</li>
-        <li>No se puede subir el valor de la cláusula de un jugador mediante intercambios: en un trueque, la cláusula debe mantenerse igual o bajar.</li>
         <li>El incumplimiento se considera antideportivo y queda a criterio de la organización de la liga.</li>
+      </ul>
+    </article>
+
+    <article class="panel rules">
+      <h2>Intercambios y traspasos</h2>
+      <p>Un intercambio con dinero (jugador/es a cambio de saldo, o mezcla de jugadores y saldo) es un <strong>traspaso legítimo</strong>: el desfase de valor de mercado entre lo que da cada uno <strong>no lo hace ilegal</strong>.</p>
+      <ul class="rules-bullets">
+        <li>Ejemplo válido: pagar ~150.000 € (u otra cantidad) por uno o varios jugadores vía intercambio, como si fuera una compra de traspaso.</li>
+        <li><strong>Antiabuso de cláusulas:</strong> no se puede usar el trueque para <em>inflar</em> la cláusula de un jugador. Tras el intercambio, la cláusula de cada jugador involucrado debe <strong>mantenerse igual o bajar</strong> respecto a la que tenía justo antes del trato.</li>
+        <li>Lo que se persigue es el trueque artificioso para blindar o encarecer cláusulas; no el traspaso negociado entre managers.</li>
       </ul>
     </article>
 
