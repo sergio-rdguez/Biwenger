@@ -11,7 +11,7 @@
   "last_place": 12,
   "active_managers": 12,
   "jornadas": 38,
-  "updated_at": "2026-11-24T16:41:44.347370+00:00",
+  "updated_at": "2026-11-24T16:57:23.074357+00:00",
   "source": "biwenger-sync",
   "previous_season": {
     "season": "2025-2026",
@@ -7889,7 +7889,7 @@
       "season_position": 5,
       "icon": "i/u/9959771.png?v=4",
       "position_inc": null,
-      "last_access": 1795472098,
+      "last_access": 1795538416,
       "team_size": 12,
       "formation": "3-4-3",
       "lineup_counting": true,
@@ -22911,7 +22911,7 @@
       "position_inc": null,
       "icon": "i/u/9959771.png?v=4",
       "team_size": 12,
-      "last_access": 1795472098,
+      "last_access": 1795538416,
       "formation": "3-4-3",
       "lineup_counting": true
     },
