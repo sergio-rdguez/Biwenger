@@ -320,6 +320,9 @@ body {
 main {
   padding: 1.15rem clamp(1rem, 3vw, 2rem) 2.5rem;
   display: grid;
+  /* minmax(0, 1fr): las tablas anchas hacen scroll en su .table-wrap
+     en vez de ensanchar toda la página. */
+  grid-template-columns: minmax(0, 1fr);
   gap: 1rem;
 }
 
@@ -330,6 +333,7 @@ main {
 
 .tab.active {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   animation: rise 0.35s ease both;
 }
 
@@ -844,6 +848,119 @@ tbody tr:hover {
 
 .heat.prov {
   outline: 1px dashed rgba(109, 204, 160, 0.45);
+}
+
+/* Tabla del bote: vista tipo Excel con mapa de calor por puesto */
+.tabla-bote {
+  min-width: 0;
+  width: auto;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.tabla-bote th,
+.tabla-bote td {
+  padding: 0.42rem 0.55rem;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.tabla-bote thead th {
+  font-family: var(--display);
+  font-size: 0.78rem;
+  letter-spacing: 0.04em;
+  color: var(--text);
+}
+
+.tabla-bote .tabla-name {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  min-width: 8.5rem;
+  text-align: left;
+  font-weight: 700;
+  font-size: 0.86rem;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--text);
+  background: #13241a;
+  border-left: 1px solid var(--line);
+  border-right: 1px solid var(--line);
+}
+
+.tabla-bote thead .tabla-name {
+  z-index: 2;
+}
+
+.tabla-bote .tabla-count {
+  min-width: 2.6rem;
+  font-weight: 700;
+  background: var(--scale, transparent);
+}
+
+.tabla-bote .tabla-debt {
+  min-width: 5.5rem;
+  font-weight: 800;
+  font-size: 0.92rem;
+  background: var(--scale, transparent);
+  border-right: 2px solid rgba(220, 235, 220, 0.28);
+}
+
+.tabla-bote .tabla-j,
+.tabla-bote .tabla-pos {
+  min-width: 2.4rem;
+}
+
+.tabla-bote .tabla-pos {
+  font-weight: 600;
+}
+
+.tabla-bote .tabla-na {
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+}
+
+.tabla-bote .tabla-first {
+  color: var(--accent-2);
+  font-weight: 800;
+}
+
+.tabla-bote .tabla-prov {
+  outline: 1px dashed rgba(238, 246, 239, 0.55);
+  outline-offset: -3px;
+}
+
+.tabla-bote tbody tr:hover .tabla-name {
+  background: #1b2f22;
+}
+
+.lvl-1 { background: #5e5420; }
+.lvl-2 { background: #7a5a1f; }
+.lvl-3 { background: #8f4b22; }
+.lvl-4 { background: #a63b2a; }
+.lvl-5 { background: #bf2f34; }
+
+.tabla-bote td.lvl-4,
+.tabla-bote td.lvl-5 {
+  color: #fff;
+  font-weight: 800;
+}
+
+.tabla-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.tabla-swatch {
+  border-radius: 6px;
+  padding: 0.2rem 0.5rem;
+  font-size: 0.74rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
 }
 
 .search-wrap input,

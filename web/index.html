@@ -23,6 +23,7 @@
       </div>
       <nav class="side-nav" aria-label="Secciones">
         <button type="button" class="nav-item active" data-tab="resumen">Resumen</button>
+        <button type="button" class="nav-item" data-tab="tabla">Tabla del bote</button>
         <button type="button" class="nav-item" data-tab="clasificacion">Clasificación</button>
         <button type="button" class="nav-item" data-tab="jornada">Jornada en vivo</button>
         <button type="button" class="nav-item" data-tab="mercado">Mercado</button>
@@ -76,6 +77,19 @@
           <article class="panel">
             <div class="panel-head"><h2>Datos destacados</h2></div>
             <div class="insight-grid" id="resumenInsights"></div>
+          </article>
+        </section>
+
+        <section class="tab" id="tab-tabla" data-title="Tabla del bote">
+          <article class="panel">
+            <div class="panel-head">
+              <div>
+                <h2>Tabla del bote</h2>
+                <p class="hint" id="tablaHint">Puesto de cada manager por jornada · pagan del 8º al 12º</p>
+              </div>
+              <div class="tabla-legend" id="tablaLegend" aria-hidden="true"></div>
+            </div>
+            <div class="table-wrap" id="tablaWrap"></div>
           </article>
         </section>
 

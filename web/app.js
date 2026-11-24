@@ -3,6 +3,7 @@ const IS_STATIC = !["localhost", "127.0.0.1"].includes(location.hostname);
 
 const TITLES = {
   resumen: "Resumen",
+  tabla: "Tabla del bote",
   clasificacion: "Clasificación",
   jornada: "Jornada en vivo",
   mercado: "Mercado",
@@ -1106,6 +1107,115 @@ function exportBoteCsv(data) {
   URL.revokeObjectURL(url);
 }
 
+// Escala verde -> ámbar -> rojo para las columnas de resumen (como el Excel).
+// t = 0 es lo mejor (verde) y t = 1 lo peor (rojo).
+function scaleStyle(value, min, max, { higherIsBetter = false } = {}) {
+  if (!(max > min)) return "";
+  let t = (value - min) / (max - min);
+  if (higherIsBetter) t = 1 - t;
+  const hue = Math.round(145 - t * 145);
+  return ` style="--scale:hsl(${hue} 52% 30%)"`;
+}
+
+function renderTabla(data) {
+  const wrap = document.getElementById("tablaWrap");
+  const players = data.players.filter((p) => !p.inactive);
+  const counted = (e) => e.status !== "prematch";
+  const maxJornada = Math.max(
+    0,
+    ...players.flatMap((p) => p.entries.filter(counted).map((e) => e.jornada))
+  );
+
+  if (!maxJornada) {
+    wrap.innerHTML = "<p class=\"hint\">Sin jornadas todavía.</p>";
+    return;
+  }
+
+  const fees = data.pot_rules || {};
+  const payPositions = Object.keys(fees)
+    .map(Number)
+    .filter((n) => n > 0)
+    .sort((a, b) => a - b);
+  const firstPay = payPositions[0] || 8;
+  const lastPay = payPositions[payPositions.length - 1] || data.last_place || 12;
+  const heatLevel = (pos) =>
+    lastPay > firstPay ? 1 + Math.round(((pos - firstPay) / (lastPay - firstPay)) * 4) : 5;
+
+  document.getElementById("tablaLegend").innerHTML = payPositions
+    .map(
+      (pos) =>
+        `<span class="tabla-swatch lvl-${heatLevel(pos)}">${pos}º · ${euro(fees[String(pos)])}</span>`
+    )
+    .join("");
+
+  const rows = players
+    .map((p) => ({ ...p, adeudaTabla: p.adeudaFinal + p.adeudaProv }))
+    .sort((a, b) => b.adeudaTabla - a.adeudaTabla || a.name.localeCompare(b.name, "es"));
+
+  const range = (key) => {
+    const values = rows.map((r) => r[key]);
+    return [Math.min(...values), Math.max(...values)];
+  };
+  const [ultMin, ultMax] = range("ult");
+  const [primMin, primMax] = range("prim");
+  const [pagMin, pagMax] = range("pag");
+  const [debtMin, debtMax] = range("adeudaTabla");
+
+  const jornadas = Array.from({ length: maxJornada }, (_, i) => i + 1);
+  const hasProvisional = rows.some((r) => r.entries.some((e) => e.status === "provisional"));
+  document.getElementById("tablaHint").textContent =
+    `Puesto de cada manager por jornada · pagan del ${firstPay}º al ${lastPay}º · NA = sin dato` +
+    (hasProvisional ? " · borde discontinuo = provisional" : "");
+
+  const head = jornadas.map((j) => `<th class="tabla-j">${j}</th>`).join("");
+  const body = rows
+    .map((p) => {
+      const cells = jornadas
+        .map((j) => {
+          const entry = p.entries.find((e) => e.jornada === j && counted(e));
+          if (!entry) return "<td class=\"tabla-pos tabla-na\">NA</td>";
+          const pays = typeof fees[String(entry.pos)] === "number";
+          const cls = [
+            "tabla-pos",
+            pays ? `lvl-${heatLevel(entry.pos)}` : "",
+            entry.pos === 1 ? "tabla-first" : "",
+            entry.status === "provisional" ? "tabla-prov" : "",
+          ]
+            .filter(Boolean)
+            .join(" ");
+          const fee = pays ? ` · paga ${euro(fees[String(entry.pos)])}` : "";
+          const prov = entry.status === "provisional" ? " (provisional)" : "";
+          const title = `J${j}: ${entry.pos}º${fee}${prov}`;
+          return `<td class="${cls}" title="${escapeHtml(title)}">${entry.pos}</td>`;
+        })
+        .join("");
+      return `<tr>
+        <td class="tabla-count"${scaleStyle(p.ult, ultMin, ultMax)}>${p.ult}</td>
+        <td class="tabla-count"${scaleStyle(p.prim, primMin, primMax, { higherIsBetter: true })}>${p.prim}</td>
+        <td class="tabla-count"${scaleStyle(p.pag, pagMin, pagMax)}>${p.pag}</td>
+        <th scope="row" class="tabla-name">${escapeHtml(p.name)}</th>
+        <td class="tabla-debt"${scaleStyle(p.adeudaTabla, debtMin, debtMax)}>${euro(p.adeudaTabla)}</td>
+        ${cells}
+      </tr>`;
+    })
+    .join("");
+
+  wrap.innerHTML = `
+    <table class="tabla-bote">
+      <thead>
+        <tr>
+          <th class="tabla-count" title="Veces último">Últ</th>
+          <th class="tabla-count" title="Veces primero">Prim</th>
+          <th class="tabla-count" title="Jornadas pagando">Pag</th>
+          <th class="tabla-name">Participantes</th>
+          <th class="tabla-debt" title="Adeuda temporada ${escapeHtml(data.season || "")}">Adeuda</th>
+          ${head}
+        </tr>
+      </thead>
+      <tbody>${body}</tbody>
+    </table>`;
+}
+
 function renderHistorico(data) {
   const jornadas = [
     ...new Set(data.players.flatMap((p) => p.entries.map((e) => e.jornada))),
@@ -1339,6 +1449,7 @@ function applyData(raw) {
   renderPlantillas(data);
   renderMovimientos(data);
   renderBote(data, document.getElementById("searchBote").value);
+  renderTabla(data);
   renderHistorico(data);
   renderManagers(data, document.getElementById("searchManagers").value);
   renderReglas(data);
